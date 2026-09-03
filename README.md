@@ -86,6 +86,11 @@ proposal. Full source list: [`backend/data/DATASET_SOURCES.md`](backend/data/DAT
 Full API reference: [`backend/API_CONTRACT.md`](backend/API_CONTRACT.md) ·
 interactive docs at `http://localhost:8000/docs`.
 
+**How the engine works** — a step-by-step mechanism note (scoring formulas, the
+knapsack optimiser, the equity cap, why it's deterministic not trained, worked
+examples): **https://claude.ai/code/artifact/88981d1f-044f-430c-b88e-ed53f3be9ee1**
+(open it and Ctrl/Cmd-P → Save as PDF).
+
 ## Manual run (two terminals)
 
 ```bash
