@@ -117,11 +117,6 @@ export default function LoginPage() {
                 className="btn-secondary w-full">
                 Continue as demo
               </button>
-              <p className="text-xs mt-3 text-center" style={{ color: 'var(--stone)' }}>
-                <span style={{ color: 'var(--ink)' }}>csr_manager</span> / <span style={{ color: 'var(--ink)' }}>saarthi2026</span>
-                <span className="mx-1.5">·</span>
-                <span style={{ color: 'var(--ink)' }}>demo</span> / <span style={{ color: 'var(--ink)' }}>demo12345</span>
-              </p>
             </div>
           )}
         </div>

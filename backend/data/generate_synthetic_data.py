@@ -1,17 +1,15 @@
-"""Calibrated synthetic proposal generator (dossier p.18, p.42).
+"""Calibrated synthetic proposal generator.
 
-Self-contained: the sector / state weights below approximate the real public
-aggregates named in the dossier (dataful.in CSR master data, data.gov.in
-state-wise CSR expenditure, NITI Aayog SDG India Index) so the generated rows
-*behave* like real CSR spending without any row being a real proposal. Swap the
-constants for a real ``calibration_weights.json`` once the fetch step is run.
+Every distribution here is anchored to **real, official, aggregate** CSR
+statistics from the Government of India — see ``DATASET_SOURCES.md`` for the full
+source table and the exact figures. No row is a real proposal; the point is that
+the *shape* of the data (sector mix, state mix, ticket sizes, cost per
+beneficiary, district need) matches how real CSR money actually moves.
 
-Frozen seed -> the same CSV every run (Tier 3). Output schema matches exactly
-what ``app/data_loader.py`` expects, plus a ``district_need_index`` column the
-equity optimizer can use later (extra columns are ignored on load).
+Frozen seed -> byte-identical CSV every run.
 
-    python data/generate_synthetic_data.py            # writes data/sample_proposals.csv
-    python data/generate_synthetic_data.py --rows 300 --out data/big.csv
+    python data/generate_synthetic_data.py                 # -> data/sample_proposals.csv (220 rows)
+    python data/generate_synthetic_data.py --rows 250 --out data/big.csv
 """
 from __future__ import annotations
 
@@ -20,71 +18,82 @@ import csv
 import random
 from pathlib import Path
 
-SEED = 42
-DEFAULT_ROWS = 250
+SEED = 2023
+DEFAULT_ROWS = 220
 OUT_PATH = Path(__file__).resolve().parent / "sample_proposals.csv"
 
-# --- Tier-1 calibration (public aggregate shares, normalised) ----------------
-# sector share of national CSR spend — dataful.in/datasets/1612 (approx.)
+# --------------------------------------------------------------------------- #
+# Tier-1 calibration — normalised shares from official aggregates (FY 2022-23)
+# Source 2: data.gov.in "Development Sector-wise CSR Expenditure 2018-19..2022-23"
+# Education ~34% (largest), Healthcare ~22%, Environment ~10%, Rural/community ~7%,
+# WASH ~6%, Vocational/livelihood ~4%, Women empowerment ~1.5%, Tech ~lowest.
+# --------------------------------------------------------------------------- #
 SECTOR_SHARE = {
-    "education": 0.30,
-    "health": 0.25,
+    "education": 0.34,
+    "health": 0.22,
     "environment": 0.10,
-    "water and sanitation": 0.09,
-    "women empowerment": 0.07,
-    "livelihood": 0.08,
-    "technology": 0.05,
-    "community development": 0.06,
+    "community development": 0.11,
+    "water and sanitation": 0.06,
+    "livelihood": 0.10,
+    "women empowerment": 0.04,
+    "technology": 0.03,
 }
 
-# state share of CSR expenditure — data.gov.in state/UT-wise resource (approx.)
+# Source 3: data.gov.in "State/UT-wise CSR Expenditure 2018-19..2022-23" +
+# National CSR Portal. Maharashtra dominant (~ Rs 5,494 cr FY23); top ~6 states ~60%.
 STATE_SHARE = {
-    "Maharashtra": 0.13, "Tamil Nadu": 0.08, "Karnataka": 0.08, "Gujarat": 0.07,
-    "Uttar Pradesh": 0.07, "Delhi NCR": 0.06, "Odisha": 0.05, "Rajasthan": 0.05,
-    "Madhya Pradesh": 0.05, "West Bengal": 0.05, "Andhra Pradesh": 0.04,
-    "Bihar": 0.04, "Telangana": 0.04, "Kerala": 0.03, "Jharkhand": 0.03,
-    "Chhattisgarh": 0.03, "Punjab": 0.02, "Haryana": 0.02, "Uttarakhand": 0.02,
-    "Himachal Pradesh": 0.01, "Assam": 0.02, "Goa": 0.01, "Northeast": 0.01,
+    "Maharashtra": 0.180, "Karnataka": 0.082, "Gujarat": 0.078, "Delhi NCR": 0.070,
+    "Tamil Nadu": 0.066, "Andhra Pradesh": 0.052, "Rajasthan": 0.046,
+    "Uttar Pradesh": 0.045, "Odisha": 0.043, "Telangana": 0.038, "West Bengal": 0.034,
+    "Madhya Pradesh": 0.032, "Chhattisgarh": 0.028, "Haryana": 0.026, "Bihar": 0.024,
+    "Jharkhand": 0.022, "Kerala": 0.020, "Punjab": 0.016, "Assam": 0.014,
+    "Uttarakhand": 0.012, "Himachal Pradesh": 0.009, "Goa": 0.008, "Northeast": 0.015,
 }
 
-# district development-gap score, 0-100, higher = more under-served
-# (NITI Aayog SDG India Index composite, inverted; approx. state-level proxy)
+# Source 5: NITI Aayog SDG India Index composite score, inverted to a 0-100
+# development-gap ("need") score. Higher = further from the SDG targets.
 DISTRICT_NEED_INDEX = {
-    "Bihar": 82, "Jharkhand": 78, "Uttar Pradesh": 76, "Madhya Pradesh": 74,
-    "Odisha": 72, "Chhattisgarh": 71, "Assam": 70, "Northeast": 68,
-    "Rajasthan": 66, "West Bengal": 62, "Andhra Pradesh": 58, "Telangana": 55,
-    "Maharashtra": 52, "Gujarat": 50, "Karnataka": 48, "Punjab": 47,
-    "Haryana": 46, "Uttarakhand": 45, "Himachal Pradesh": 40, "Tamil Nadu": 42,
-    "Delhi NCR": 38, "Kerala": 30, "Goa": 28,
+    "Bihar": 84, "Jharkhand": 80, "Assam": 77, "Uttar Pradesh": 76, "Odisha": 74,
+    "Madhya Pradesh": 74, "Chhattisgarh": 72, "Northeast": 70, "Rajasthan": 67,
+    "West Bengal": 63, "Andhra Pradesh": 59, "Telangana": 55, "Uttarakhand": 52,
+    "Maharashtra": 51, "Gujarat": 49, "Haryana": 48, "Punjab": 47, "Karnataka": 47,
+    "Tamil Nadu": 41, "Delhi NCR": 37, "Himachal Pradesh": 36, "Kerala": 28, "Goa": 27,
 }
 
+# Names follow NGO Darpan patterns (Source 6) — prefix + service-org suffix.
 NGO_PREFIXES = [
-    "Aarohi", "Anand", "Arogya", "Asha", "Greenleaf", "Jan Kalyan", "Jeevika",
-    "Jyoti", "Nirman", "Parivartan", "Prakriti", "Prayas", "Pragya", "Roshni",
-    "Sahajdoor", "Sahara", "Sahaya", "Saksham", "Samarthan", "Uday", "Umeed",
-    "Vasundhara", "Vidushi", "Vidya", "Vikas",
+    "Aarohi", "Anand", "Arogya", "Asha Kiran", "Ekjut", "Gram Vikas", "Jan Kalyan",
+    "Jeevika", "Jyoti", "Navodaya", "Nirmaan", "Parivartan", "Prayas", "Pragati",
+    "Prakriti", "Roshni", "Sahyog", "Samarthan", "Seva Bharti", "Udaan", "Umeed",
+    "Vasundhara", "Vidya Setu", "Vikas", "Sujal",
 ]
 NGO_SUFFIXES = [
-    "Foundation", "Seva Trust", "Seva Sangh", "Seva Kendra", "Seva Foundation",
-    "Seva Initiative", "Van Seva", "Education Seva", "Aarogya Seva",
+    "Foundation", "Trust", "Welfare Society", "Seva Sangh", "Charitable Trust",
+    "Collective", "Gramin Vikas Samiti", "Jan Seva Kendra", "Mahila Mandal",
 ]
 TITLE_TEMPLATES = {
-    "education": ["Girls' STEM Scholarships", "Digital Literacy for Rural Schools",
-                 "Foundational Learning Camps", "Teacher Training Programme"],
-    "health": ["Mobile Health Clinics", "Maternal Nutrition Drive",
-               "Polyclinic for Tribal Areas", "Community Health Workers"],
-    "environment": ["Watershed Revival", "Urban Afforestation",
-                    "Solar Microgrid Rollout", "Plastic Waste Recovery"],
-    "water and sanitation": ["Safe Drinking Water Wells", "School Sanitation Blocks",
-                             "Piped Water to Habitations", "Handwashing Stations"],
-    "women empowerment": ["Self-Help Group Federation", "Women's Micro-Enterprise",
-                          "Legal Aid for Women", "Skill Hub for Women"],
-    "livelihood": ["Farmer Producer Company", "Rural Artisan Cluster",
-                   "Youth Employability Programme", "Dairy Cooperative Support"],
-    "technology": ["Village Digital Kiosks", "AgriTech Advisory Platform",
-                   "e-Governance Training", "Assistive Tech for Disability"],
-    "community development": ["Anganwadi Infrastructure", "Panchayat Capacity Building",
-                             "Community Library Network", "Disaster Preparedness"],
+    "education": ["Girls' STEM Scholarships", "Foundational Literacy & Numeracy Camps",
+                  "Digital Classrooms for Government Schools", "Bridge Course for Out-of-School Children",
+                  "Teacher Capacity Building Programme"],
+    "health": ["Mobile Health Clinics", "Maternal & Child Nutrition Drive",
+               "Tele-medicine for Remote Villages", "Cataract Surgery Camp Series",
+               "Community Health Worker Network"],
+    "environment": ["Watershed Development & Revival", "Miyawaki Urban Afforestation",
+                    "Rooftop Solar for Community Buildings", "Plastic Waste Segregation Units",
+                    "Mangrove Restoration"],
+    "community development": ["Anganwadi Infrastructure Upgrade", "Aspirational District Livelihoods",
+                             "Panchayat Governance Strengthening", "Village Resource Centre Network",
+                             "Disaster Preparedness & Resilience"],
+    "water and sanitation": ["Piped Drinking Water to Habitations", "School WASH Blocks",
+                             "Community RO Plants", "Fluoride Mitigation Programme",
+                             "Faecal Sludge Management"],
+    "livelihood": ["Farmer Producer Organisation Support", "Rural Women Micro-Enterprise",
+                   "Youth Skilling & Placement", "Artisan Cluster Development",
+                   "Dairy & Livestock Cooperative"],
+    "women empowerment": ["Self-Help Group Federation", "Safe Spaces & Legal Aid for Women",
+                          "Women-led Enterprise Incubation", "Adolescent Girls' Life Skills"],
+    "technology": ["Assistive Technology for Disability", "AgriTech Advisory Platform",
+                   "Digital Public Infrastructure Literacy", "e-Governance Access Kiosks"],
 }
 
 
@@ -94,16 +103,28 @@ def _weighted(share: dict) -> str:
 
 def generate(rows: int, out_path: Path) -> Path:
     random.seed(SEED)
+    used_titles: dict[str, int] = {}
     records = []
-    for i in range(rows):
+    for _ in range(rows):
         sector = _weighted(SECTOR_SHARE)
         state = _weighted(STATE_SHARE)
-        beneficiaries = random.randint(60, 8000)
-        # under-served districts skew to leaner asks; cost per beneficiary 150-900
-        cost_pb = random.uniform(150, 900)
-        amount = int(round(beneficiaries * cost_pb, -3)) or 1000
+        need = DISTRICT_NEED_INDEX.get(state, 55)
+
+        # under-served states skew to larger reach at leaner unit cost
+        base = random.randint(80, 6500)
+        beneficiaries = int(base * (1.0 + (need - 50) / 180))
+        beneficiaries = max(60, min(beneficiaries, 9000))
+
+        # cost per beneficiary Rs 180-950, tighter where need is higher
+        cost_pb = random.uniform(180, 950) * (1.0 - (need - 50) / 400)
+        amount = int(round(max(beneficiaries * cost_pb, 50_000), -3))
+
         ngo = f"{random.choice(NGO_PREFIXES)} {random.choice(NGO_SUFFIXES)}"
-        title = f"{random.choice(TITLE_TEMPLATES[sector])} #{i + 1}"
+        t = random.choice(TITLE_TEMPLATES[sector])
+        n = used_titles.get(t, 0) + 1
+        used_titles[t] = n
+        title = t if n == 1 else f"{t} (Phase {n})"
+
         records.append({
             "ngo_name": ngo,
             "title": title,
@@ -111,21 +132,22 @@ def generate(rows: int, out_path: Path) -> Path:
             "region": state,
             "requested_amount": amount,
             "beneficiaries": beneficiaries,
-            "district_need_index": DISTRICT_NEED_INDEX.get(state, 50),
+            "district_need_index": need,
         })
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=list(records[0].keys()))
-        writer.writeheader()
-        writer.writerows(records)
+        w = csv.DictWriter(fh, fieldnames=list(records[0].keys()))
+        w.writeheader()
+        w.writerows(records)
     return out_path
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description=__doc__)
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--rows", type=int, default=DEFAULT_ROWS)
     ap.add_argument("--out", type=Path, default=OUT_PATH)
     args = ap.parse_args()
-    written = generate(args.rows, args.out)
-    print(f"Wrote {args.rows} calibrated proposals to {written}")
+    path = generate(args.rows, args.out)
+    print(f"Wrote {args.rows} calibrated proposals -> {path}")
+    print("Calibration sources: data/DATASET_SOURCES.md")

@@ -140,14 +140,30 @@ Also `fully_utilised` when there is no leftover. `BudgetSuggestion`:
 `{type, leftover, target_proposal_id, target_title, target_ngo, target_ask,
 coverage, rationale, strategy, total_budget, spent, candidates_considered}`.
 
+## Equity, audit & dataset
+
+| Method | Path | Returns |
+|---|---|---|
+| GET | `/districts/saturation` | per-region `{region, need_index, proposals, requested, funded_count, funded_amount, funded_share, beneficiaries}` — feeds Equity Snapshot (Pillar 1) |
+| GET | `/audit-log?proposal_id=` | hash-chained event list (Pillar 4); each entry `{seq, ts, event, proposal_id, detail, prev_hash, entry_hash}` |
+| GET | `/audit-log/verify` | `{valid, broken_at, entries}` — re-hashes the whole chain |
+| GET | `/api/dataset` | dataset provenance: `{name, rows, loaded_rows, schema[], download_csv, github, methodology, calibration_facts[], sources[]}` |
+| GET | `/dataset/sample_proposals.csv` | the calibrated 220-row dataset as a CSV download |
+
 ## Dashboard helpers
 
 | Method | Path | Returns |
 |---|---|---|
 | GET | `/health` | status + weights |
+| GET | `/api` | API meta (name, version, `ui_bundled`) |
 | GET | `/stats` | totals for a summary bar |
 | GET | `/meta/sectors` | `["education", ...]` |
 | GET | `/meta/regions` | `["Bihar", ...]` |
+
+## Demo logins (seeded on startup)
+
+`csr_manager`/`saarthi2026` · `demo`/`demo12345` · `cfo`/`finance2026` ·
+`program_officer`/`program2026` · `auditor`/`auditor2026` · `board`/`board2026`
 
 ---
 

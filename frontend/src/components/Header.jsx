@@ -2,6 +2,8 @@ import { useAuth } from '../context/AuthContext'
 
 const VIEW_LABELS = {
   proposals: 'Proposals', results: 'Settlement', partners: 'Partner Match',
+  equity: 'Equity Snapshot', impact: 'Impact Overview', directory: 'Partner Directory',
+  audit: 'Audit Trail', dataset: 'Dataset & Sources',
   compliance: 'Compliance', csr2: 'CSR-2 Filing', projects: 'Project Tracker',
 }
 

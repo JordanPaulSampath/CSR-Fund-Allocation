@@ -19,8 +19,18 @@ This builds the UI once, then serves the **UI and the API together on
 http://localhost:8000** and opens your browser. The 250-row sample dataset
 loads automatically.
 
-**Login:** `csr_manager` / `saarthi2026`  · or · `demo` / `demo12345`
-(or click **Continue as demo** on the login screen).
+**Login:** click **Continue as demo**, or use one of the seeded accounts:
+
+| User | Password | Role |
+|---|---|---|
+| `csr_manager` | `saarthi2026` | CSR Manager |
+| `demo` | `demo12345` | CSR Manager |
+| `cfo` | `finance2026` | Finance Head |
+| `program_officer` | `program2026` | Program Officer |
+| `auditor` | `auditor2026` | Compliance Auditor |
+| `board` | `board2026` | Board Member |
+
+(Credentials are intentionally not shown on the login screen.)
 
 | Command | What it does |
 |---|---|
@@ -40,17 +50,38 @@ cd ../frontend && npm install
 
 ---
 
+## Screens
+
+**Allocation** — Proposals · Settlement · Partner Match · Equity Snapshot
+**Compliance** — Compliance · CSR-2 Filing · Audit Trail
+**Operations** — Project Tracker · Impact Overview · Partner Directory
+**Data** — Dataset & Sources
+
 ## What's inside
 
 ```
 backend/          FastAPI — scoring, equity ILP optimizer, partner match, budget advisor
   app/partners.py         Pillar 5 — implementing-partner fit scoring
   app/budget_advisor.py   Pillar 6 — leftover-funds recommendation
-  data/sample_proposals.csv   250 calibrated synthetic proposals (auto-loaded)
+  app/ledger.py           Pillar 4 — hash-chained tamper-evident audit trail
+  app/geo.py              NITI Aayog SDG-derived state need index
+  app/dataset_meta.py     dataset provenance surfaced at /api/dataset
+  data/sample_proposals.csv   220 proposals calibrated to official GoI CSR aggregates
+  data/DATASET_SOURCES.md     every calibration source, with links
   data/ngo_partners.csv       18 implementing partners with capability profiles
-frontend/         React + Vite + Tailwind
+frontend/         React + Vite + Tailwind ("Operations Console" theme)
 run.py            one-command launcher (build + serve, or dev)
 ```
+
+## Dataset
+
+`backend/data/sample_proposals.csv` — 220 synthetic NGO proposals whose sector
+mix, state mix, ticket sizes and district-need scores are **calibrated to
+official Government of India CSR aggregates (FY 2022-23)**. No row is a real
+proposal. Full source list: [`backend/data/DATASET_SOURCES.md`](backend/data/DATASET_SOURCES.md)
+· raw file:
+[`sample_proposals.csv`](https://raw.githubusercontent.com/JordanPaulSampath/CSR-Fund-Allocation/main-2/backend/data/sample_proposals.csv)
+· regenerate: `python backend/data/generate_synthetic_data.py`
 
 Full API reference: [`backend/API_CONTRACT.md`](backend/API_CONTRACT.md) ·
 interactive docs at `http://localhost:8000/docs`.

@@ -61,6 +61,10 @@ def seed_demo_user() -> None:
     accounts = [
         (DEMO_USERNAME, DEMO_PASSWORD, "Saarthi Demo Corp", "CSR Manager"),
         ("demo", "demo12345", "Demo Industries Ltd.", "CSR Manager"),
+        ("cfo", "finance2026", "Saarthi Demo Corp", "Finance Head"),
+        ("program_officer", "program2026", "Saarthi Demo Corp", "Program Officer"),
+        ("auditor", "auditor2026", "Saarthi Demo Corp", "Compliance Auditor"),
+        ("board", "board2026", "Saarthi Demo Corp", "Board Member"),
     ]
     for username, password, company, role in accounts:
         if get_user_by_username(username):

@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 // browser only ever talks to one origin (same as the bundled production setup,
 // where FastAPI serves both). Override with VITE_API_URL if you need a remote API.
 const API_TARGET = process.env.VITE_API_URL || 'http://localhost:8000'
-const proxied = ['/api', '/auth', '/proposals', '/allocate', '/scoring', '/partners', '/stats', '/meta', '/health', '/docs', '/openapi.json']
+const proxied = ['/api', '/auth', '/proposals', '/allocate', '/scoring', '/partners', '/stats', '/meta', '/districts', '/dataset', '/audit-log', '/health', '/docs', '/openapi.json']
 
 export default defineConfig({
   plugins: [react()],

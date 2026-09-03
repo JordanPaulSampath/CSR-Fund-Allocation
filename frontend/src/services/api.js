@@ -50,7 +50,23 @@ export const matchPartners = (proposalId, topN = 3) =>
 // Pillar 6 — remaining-budget advisor
 export const remainingBudgetAdvice = () => request('/allocate/remaining')
 
+// Equity snapshot (Pillar 1)
+export const districtSaturation = () => request('/districts/saturation')
+
+// Audit trail (Pillar 4)
+export const auditLog = (proposalId) =>
+  request(`/audit-log${proposalId != null ? `?proposal_id=${proposalId}` : ''}`)
+export const auditVerify = () => request('/audit-log/verify')
+
+// Dataset provenance
+export const datasetInfo = () => request('/api/dataset')
+export const datasetCsvUrl = `${BASE}/dataset/sample_proposals.csv`
+
 // shared
 export const listProposals = () => request('/proposals')
+export const stats = () => request('/stats')
 
-export default { listPartners, matchPartners, remainingBudgetAdvice, listProposals }
+export default {
+  listPartners, matchPartners, remainingBudgetAdvice, districtSaturation,
+  auditLog, auditVerify, datasetInfo, datasetCsvUrl, listProposals, stats,
+}

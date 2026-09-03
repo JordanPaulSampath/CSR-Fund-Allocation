@@ -21,11 +21,13 @@ from pydantic import BaseModel, Field
 FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
 from . import __version__
+from . import ledger
 from . import partners as partners_mod
 from .auth import RequireUser, create_token
 from .budget_advisor import recommend as recommend_budget
-from .config import DEFAULT_WEIGHTS, load_weights, save_weights
+from .config import DATA_DIR, DEFAULT_WEIGHTS, load_weights, save_weights
 from .data_loader import load_from_text, load_sample_dataset
+from .dataset_meta import DATASET_INFO
 from .models import Proposal, store
 from .optimizer import allocate_budget, compare_strategies
 from .schemas import (AllocationResult, BudgetSuggestion, CompareResult, LoginIn,
@@ -217,6 +219,7 @@ def delete_proposal(proposal_id: int, user: dict = RequireUser):
 def reset_proposals(user: dict = RequireUser):
     global _last_allocation
     store.clear()
+    ledger.clear()
     _last_allocation = None
     return {"status": "cleared", "proposals_loaded": 0}
 
@@ -291,6 +294,7 @@ def _run_allocation(total_budget: float, strategy: str) -> dict:
         p.allocated_amount = p.requested_amount if p.is_funded else 0.0
         store.update(p)
     _last_allocation = result
+    ledger.record_allocation(result)
     return result
 
 
@@ -384,6 +388,69 @@ def stats():
             sum(p.final_score for p in items) / len(items), 2
         ) if items else 0.0,
     }
+
+
+@app.get("/districts/saturation", tags=["meta"])
+def district_saturation():
+    """Per-region funded vs requested totals + development-need index.
+
+    Feeds the Equity Snapshot screen and, conceptually, the next cycle's
+    concentration penalty (dossier Pillar 1).
+    """
+    from .geo import need_index
+
+    rows: dict[str, dict] = {}
+    for p in store.all():
+        r = rows.setdefault(p.region, {
+            "region": p.region, "need_index": need_index(p.region), "proposals": 0,
+            "requested": 0.0, "funded_count": 0, "funded_amount": 0.0, "beneficiaries": 0,
+        })
+        r["proposals"] += 1
+        r["requested"] += p.requested_amount
+        r["beneficiaries"] += p.beneficiaries
+        if p.is_funded:
+            r["funded_count"] += 1
+            r["funded_amount"] += p.allocated_amount
+    for r in rows.values():
+        r["requested"] = round(r["requested"], 2)
+        r["funded_amount"] = round(r["funded_amount"], 2)
+        r["funded_share"] = round(
+            r["funded_amount"] / r["requested"], 3) if r["requested"] else 0.0
+    return sorted(rows.values(), key=lambda r: r["requested"], reverse=True)
+
+
+# --------------------------------------------------------------------------- #
+# Pillar 4 — tamper-evident audit trail
+# --------------------------------------------------------------------------- #
+@app.get("/audit-log", tags=["audit"])
+def audit_log(proposal_id: Optional[int] = None):
+    """Hash-chained event history. Optional ?proposal_id= filter."""
+    return ledger.history(proposal_id)
+
+
+@app.get("/audit-log/verify", tags=["audit"])
+def audit_log_verify():
+    """Re-hash the whole chain and report whether it's intact."""
+    return ledger.verify()
+
+
+# --------------------------------------------------------------------------- #
+# dataset provenance
+# --------------------------------------------------------------------------- #
+@app.get("/api/dataset", tags=["meta"])
+def dataset_info():
+    """Provenance + trusted-source list for the bundled proposal dataset."""
+    info = dict(DATASET_INFO)
+    info["loaded_rows"] = len(store)
+    return info
+
+
+@app.get("/dataset/sample_proposals.csv", tags=["meta"])
+def dataset_download():
+    path = Path(DATA_DIR) / "sample_proposals.csv"
+    if not path.exists():
+        raise HTTPException(404, "Dataset file not found.")
+    return FileResponse(path, media_type="text/csv", filename="sample_proposals.csv")
 
 
 # Run once at import so the app is demo-ready even without the lifespan hook

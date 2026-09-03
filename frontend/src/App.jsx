@@ -13,6 +13,11 @@ import ProjectTracker from './components/ProjectTracker'
 import CSR2Form from './components/CSR2Form'
 import PartnerMatch from './components/PartnerMatch'
 import BudgetAdvisor from './components/BudgetAdvisor'
+import EquitySnapshot from './components/EquitySnapshot'
+import ImpactOverview from './components/ImpactOverview'
+import AuditTrail from './components/AuditTrail'
+import DatasetSources from './components/DatasetSources'
+import PartnersDirectory from './components/PartnersDirectory'
 import LoginPage from './components/LoginPage'
 
 // Same-origin by default: dev proxies these paths to :8000 (see vite.config.js),
@@ -193,6 +198,21 @@ function Dashboard() {
 
             {/* PARTNER MATCH */}
             {activeView === 'partners' && <PartnerMatch proposals={proposals} />}
+
+            {/* EQUITY SNAPSHOT */}
+            {activeView === 'equity' && <EquitySnapshot />}
+
+            {/* IMPACT OVERVIEW */}
+            {activeView === 'impact' && <ImpactOverview result={allocationResult} proposals={proposals} />}
+
+            {/* PARTNER DIRECTORY */}
+            {activeView === 'directory' && <PartnersDirectory />}
+
+            {/* AUDIT TRAIL */}
+            {activeView === 'audit' && <AuditTrail />}
+
+            {/* DATASET & SOURCES */}
+            {activeView === 'dataset' && <DatasetSources />}
 
             {/* COMPLIANCE */}
             {activeView === 'compliance' && <ComplianceDashboard budget={budget} />}
