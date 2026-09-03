@@ -28,12 +28,8 @@ export default function Sidebar({ activeView, setActiveView, collapsed, setColla
 
   return (
     <>
-      {/* Mobile overlay */}
-      {!collapsed && (
-        <div className="fixed inset-0 bg-black/20 z-40 lg:hidden" onClick={() => setCollapsed(true)} />
-      )}
+      {!collapsed && <div className="fixed inset-0 bg-black/20 z-40 lg:hidden" onClick={() => setCollapsed(true)} />}
 
-      {/* Sidebar */}
       <aside className={`
         fixed lg:sticky top-0 left-0 z-40 lg:z-auto
         h-screen lg:h-auto lg:top-16
@@ -43,47 +39,34 @@ export default function Sidebar({ activeView, setActiveView, collapsed, setColla
         flex-shrink-0
       `}>
         <div className="h-full overflow-y-auto py-4 px-3">
-          {/* Company info */}
           <div className="mb-5 px-2">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                {user?.company_name?.charAt(0)?.toUpperCase() || 'C'}
+                {user?.user?.charAt(0)?.toUpperCase() || 'C'}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-800 truncate">{user?.company_name || 'Company'}</p>
-                <p className="text-[10px] text-slate-400 truncate">{user?.email}</p>
+                <p className="text-sm font-semibold text-slate-800 truncate">{user?.user || 'CSR Manager'}</p>
+                <p className="text-[10px] text-slate-400">CSR Manager</p>
               </div>
             </div>
           </div>
 
-          {/* Nav sections */}
           {NAV_ITEMS.map(section => (
             <div key={section.section} className="mb-4">
               <p className="px-2 mb-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{section.section}</p>
               <div className="space-y-0.5">
                 {section.items.map(item => {
                   const isActive = activeView === item.id
-                  const isDisabled = item.needsData && false // parent controls this
                   return (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveView(item.id)}
-                      className={`
-                        w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium
-                        transition-all duration-150
-                        ${isActive
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
-                        }
-                      `}
-                    >
+                    <button key={item.id} onClick={() => setActiveView(item.id)}
+                      className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
+                        isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+                      }`}>
                       <svg className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
                       </svg>
                       {item.label}
-                      {item.id === 'results' && (
-                        <span className="ml-auto text-[10px] text-slate-400">●</span>
-                      )}
+                      {item.id === 'results' && <span className="ml-auto text-[10px] text-slate-400">●</span>}
                     </button>
                   )
                 })}

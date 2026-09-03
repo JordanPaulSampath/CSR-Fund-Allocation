@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { AuthProvider, useAuth } from './context/AuthContext'
+import { AuthProvider, useAuth, authHeaders } from './context/AuthContext'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import ProposalList from './components/ProposalList'
@@ -11,28 +11,19 @@ import ComplianceDashboard from './components/ComplianceDashboard'
 import ProjectTracker from './components/ProjectTracker'
 import CSR2Form from './components/CSR2Form'
 import LoginPage from './components/LoginPage'
-import SignupPage from './components/SignupPage'
-import ProfilePage from './components/ProfilePage'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 function AppShell() {
   const { isAuthenticated } = useAuth()
-  const [authView, setAuthView] = useState('login')
-
-  if (!isAuthenticated) {
-    return authView === 'login'
-      ? <LoginPage onSwitchToSignup={() => setAuthView('signup')} />
-      : <SignupPage onSwitchToLogin={() => setAuthView('login')} />
-  }
-
+  if (!isAuthenticated) return <LoginPage />
   return <Dashboard />
 }
 
 function Dashboard() {
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const [proposals, setProposals] = useState([])
-  const [budget, setBudget] = useState(user?.csr_budget || 500000)
+  const [budget, setBudget] = useState(500000)
   const [allocationResult, setAllocationResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [allocating, setAllocating] = useState(false)
@@ -40,71 +31,109 @@ function Dashboard() {
   const [activeView, setActiveView] = useState('proposals')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [constraints, setConstraints] = useState({
-    min_regions: 2,
-    min_sectors: 2,
-    max_per_region_ratio: 0.5,
+    min_regions: 2, min_sectors: 2, max_per_region_ratio: 0.5,
   })
 
+  const authH = authHeaders(token)
+
+  // ── Fetch all proposals ──
+  const fetchProposals = useCallback(async () => {
+    setLoading(true); setError(null)
+    try {
+      const res = await fetch(`${API}/proposals`)
+      if (!res.ok) throw new Error(`Failed to fetch proposals`)
+      setProposals(await res.json())
+    } catch (err) { setError(err.message) } finally { setLoading(false) }
+  }, [])
+
+  // ── Load sample data (POST /proposals/load-samples) ──
   const loadSampleData = useCallback(async () => {
     setLoading(true); setError(null)
     try {
-      const res = await fetch(`${API_BASE}/proposals/sample`)
-      if (!res.ok) throw new Error(`Failed to load sample data: ${res.statusText}`)
-      setProposals(await res.json())
-      setAllocationResult(null); setActiveView('proposals')
+      const res = await fetch(`${API}/proposals/load-samples?replace=true`, {
+        method: 'POST', headers: { ...authH },
+      })
+      if (!res.ok) throw new Error(`Failed to load sample data: ${await res.text()}`)
+      setProposals(await res.json()); setAllocationResult(null); setActiveView('proposals')
     } catch (err) { setError(err.message) } finally { setLoading(false) }
-  }, [])
+  }, [authH])
 
-  const importCSV = useCallback(async (parsedRows) => {
+  // ── CSV upload (multipart POST /proposals/upload-csv) ──
+  const uploadCSV = useCallback(async (file) => {
     setLoading(true); setError(null)
     try {
-      const res = await fetch(`${API_BASE}/proposals/bulk`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(parsedRows),
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch(`${API}/proposals/upload-csv?replace=true`, {
+        method: 'POST', headers: { ...authH }, body: formData,
       })
-      if (!res.ok) throw new Error(`Bulk import failed: ${await res.text()}`)
-      setProposals(await res.json())
-      setAllocationResult(null); setActiveView('proposals')
+      if (!res.ok) throw new Error(`Upload failed: ${await res.text()}`)
+      setProposals(await res.json()); setAllocationResult(null); setActiveView('proposals')
     } catch (err) { setError(err.message) } finally { setLoading(false) }
-  }, [])
+  }, [authH])
 
-  const runAllocation = useCallback(async () => {
+  // ── Run allocation (POST /allocate?total_budget=N&strategy=optimizer) ──
+  const runAllocation = useCallback(async (strategy = 'optimizer') => {
     setAllocating(true); setError(null); setAllocationResult(null)
     try {
-      const res = await fetch(`${API_BASE}/allocate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('csr_helper_token')}`,
-        },
-        body: JSON.stringify({ budget, proposals: proposals.map(p => p.id), constraints }),
+      const res = await fetch(`${API}/allocate?total_budget=${budget}&strategy=${strategy}`, {
+        method: 'POST', headers: { ...authH },
       })
       if (!res.ok) throw new Error(`Allocation failed: ${await res.text()}`)
-      setAllocationResult(await res.json()); setActiveView('results')
+      const data = await res.json()
+      setAllocationResult(data)
+      // Update proposals with funded/rejected status from allocation
+      setProposals(prev => prev.map(p => {
+        const funded = data.funded.find(f => f.id === p.id)
+        if (funded) return { ...p, is_funded: true, allocated_amount: funded.allocated_amount }
+        const rejected = data.rejected.find(r => r.id === p.id)
+        if (rejected) return { ...p, is_funded: false, allocated_amount: 0 }
+        return p
+      }))
+      setActiveView('results')
     } catch (err) { setError(err.message) } finally { setAllocating(false) }
-  }, [budget, proposals, constraints])
+  }, [budget, authH])
 
-  const resetAll = useCallback(() => {
-    setProposals([]); setAllocationResult(null); setError(null); setActiveView('proposals')
-  }, [])
+  // ── Compare strategies (POST /allocate/compare) ──
+  const runCompare = useCallback(async () => {
+    setAllocating(true); setError(null); setAllocationResult(null)
+    try {
+      const res = await fetch(`${API}/allocate/compare?total_budget=${budget}`, {
+        method: 'POST', headers: { ...authH },
+      })
+      if (!res.ok) throw new Error(`Compare failed: ${await res.text()}`)
+      const data = await res.json()
+      setAllocationResult(data.optimizer)
+      setProposals(prev => prev.map(p => {
+        const funded = data.optimizer.funded.find(f => f.id === p.id)
+        if (funded) return { ...p, is_funded: true, allocated_amount: funded.allocated_amount }
+        return { ...p, is_funded: false, allocated_amount: 0 }
+      }))
+      setActiveView('results')
+    } catch (err) { setError(err.message) } finally { setAllocating(false) }
+  }, [budget, authH])
+
+  // ── Reset all proposals ──
+  const resetAll = useCallback(async () => {
+    setLoading(true); setError(null)
+    try {
+      await fetch(`${API}/proposals/reset`, { method: 'POST', headers: { ...authH } })
+      setProposals([]); setAllocationResult(null); setActiveView('proposals')
+    } catch (err) { setError(err.message) } finally { setLoading(false) }
+  }, [authH])
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col">
-      <Header
-        budget={budget} setBudget={setBudget}
-        activeView={activeView} setActiveView={setActiveView}
-        hasResults={!!allocationResult} hasProposals={proposals.length > 0}
-        sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen}
-      />
+      <Header budget={budget} setBudget={setBudget} activeView={activeView}
+        setActiveView={setActiveView} hasResults={!!allocationResult}
+        hasProposals={proposals.length > 0} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <div className="flex flex-1">
-        {/* Sidebar */}
-        <Sidebar activeView={activeView} setActiveView={setActiveView} collapsed={!sidebarOpen} setCollapsed={setSidebarOpen} />
+        <Sidebar activeView={activeView} setActiveView={setActiveView}
+          collapsed={!sidebarOpen} setCollapsed={setSidebarOpen} />
 
-        {/* Main content */}
         <main className="flex-1 w-full min-w-0">
           <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 lg:py-8">
-            {/* Error banner */}
             {error && (
               <div className="mb-5 p-3.5 sm:p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-2 animate-fade-in-up">
                 <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,22 +148,25 @@ function Dashboard() {
               </div>
             )}
 
-            {/* ── PROPOSALS VIEW ── */}
+            {/* ── PROPOSALS ── */}
             {activeView === 'proposals' && (
               <div className="space-y-5 sm:space-y-6">
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-5 sm:p-6 text-white shadow-lg animate-fade-in-up">
                   <h2 className="text-lg sm:text-xl font-bold">
-                    Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {user?.company_name || 'Company'} 👋
+                    Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {user?.user || 'CSR Manager'} 👋
                   </h2>
-                  <p className="text-blue-100 text-sm mt-1 max-w-xl">Upload proposals, score them, and run the ILP optimizer to find the best allocation.</p>
+                  <p className="text-blue-100 text-sm mt-1 max-w-xl">Upload NGO proposals, score them, and run the ILP optimizer to find the best allocation.</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-                  <CSVUpload onImport={importCSV} disabled={loading} />
-                  <button onClick={loadSampleData} disabled={loading} className="btn-primary !bg-emerald-600 !from-emerald-600 !to-emerald-600 hover:!from-emerald-700 hover:!to-emerald-700">
+                  <CSVUpload onUpload={uploadCSV} disabled={loading} />
+                  <button onClick={loadSampleData} disabled={loading}
+                    className="btn-primary !bg-emerald-600 !from-emerald-600 !to-emerald-600 hover:!from-emerald-700 hover:!to-emerald-700">
                     {loading ? 'Loading…' : 'Load Sample Data'}
                   </button>
-                  {proposals.length > 0 && <button onClick={resetAll} className="btn-secondary">Clear All</button>}
+                  {proposals.length > 0 && (
+                    <button onClick={resetAll} className="btn-secondary">Clear All</button>
+                  )}
                 </div>
 
                 {proposals.length > 0 ? (
@@ -142,7 +174,8 @@ function Dashboard() {
                     <ProposalList proposals={proposals} loading={loading} onLoadSample={loadSampleData} />
                     <div className="xl:sticky xl:top-20">
                       <AllocationPanel budget={budget} constraints={constraints} setConstraints={setConstraints}
-                        onAllocate={runAllocation} allocating={allocating} proposalCount={proposals.length} />
+                        onAllocate={runAllocation} onCompare={runCompare} allocating={allocating}
+                        proposalCount={proposals.length} />
                     </div>
                   </div>
                 ) : (
@@ -151,7 +184,7 @@ function Dashboard() {
               </div>
             )}
 
-            {/* ── RESULTS VIEW ── */}
+            {/* ── RESULTS ── */}
             {activeView === 'results' && (
               <div className="space-y-5 sm:space-y-6">
                 <button onClick={() => setActiveView('proposals')}
@@ -170,17 +203,14 @@ function Dashboard() {
               </div>
             )}
 
-            {/* ── COMPLIANCE VIEW ── */}
+            {/* ── COMPLIANCE ── */}
             {activeView === 'compliance' && <ComplianceDashboard budget={budget} />}
 
-            {/* ── PROJECT TRACKER VIEW ── */}
+            {/* ── PROJECT TRACKER ── */}
             {activeView === 'projects' && <ProjectTracker />}
 
-            {/* ── CSR-2 VIEW ── */}
+            {/* ── CSR-2 ── */}
             {activeView === 'csr2' && <CSR2Form />}
-
-            {/* ── PROFILE VIEW ── */}
-            {activeView === 'profile' && <ProfilePage />}
           </div>
         </main>
       </div>
@@ -189,9 +219,5 @@ function Dashboard() {
 }
 
 export default function App() {
-  return (
-    <AuthProvider>
-      <AppShell />
-    </AuthProvider>
-  )
+  return <AuthProvider><AppShell /></AuthProvider>
 }

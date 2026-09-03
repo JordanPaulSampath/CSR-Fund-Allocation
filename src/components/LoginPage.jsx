@@ -1,22 +1,21 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 
-export default function LoginPage({ onSwitchToSignup }) {
+export default function LoginPage() {
   const { login, loading, error, clearError } = useAuth()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!email || !password) return
-    try { await login(email, password) } catch {}
+    if (!username || !password) return
+    try { await login(username, password) } catch {}
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-sm">
-        {/* Logo */}
         <div className="text-center mb-6 sm:mb-8 animate-fade-in-up">
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
             <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -25,9 +24,9 @@ export default function LoginPage({ onSwitchToSignup }) {
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Welcome back</h1>
           <p className="text-sm text-slate-400 mt-1">Sign in to CSR Helper</p>
+          <p className="text-xs text-slate-300 mt-2">Demo: csr_manager / saarthi2026</p>
         </div>
 
-        {/* Card */}
         <div className="card p-6 sm:p-8 animate-fade-in-up">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-center gap-2">
@@ -45,16 +44,16 @@ export default function LoginPage({ onSwitchToSignup }) {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1.5">Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="you@company.com" required className="input" />
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">Username</label>
+              <input type="text" value={username} onChange={e => setUsername(e.target.value)}
+                placeholder="csr_manager" required className="input" autoComplete="username" />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-600 mb-1.5">Password</label>
               <div className="relative">
                 <input type={showPassword ? 'text' : 'password'} value={password}
-                  onChange={e => setPassword(e.target.value)} placeholder="••••••••" required className="input pr-10" />
+                  onChange={e => setPassword(e.target.value)} placeholder="••••••••" required className="input pr-10" autoComplete="current-password" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
                   {showPassword ? (
@@ -71,7 +70,7 @@ export default function LoginPage({ onSwitchToSignup }) {
               </div>
             </div>
 
-            <button type="submit" disabled={loading || !email || !password} className="btn-primary w-full">
+            <button type="submit" disabled={loading || !username || !password} className="btn-primary w-full">
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -80,15 +79,6 @@ export default function LoginPage({ onSwitchToSignup }) {
               ) : 'Sign In'}
             </button>
           </form>
-
-          <div className="mt-5 text-center">
-            <p className="text-sm text-slate-400">
-              Don't have an account?{' '}
-              <button onClick={onSwitchToSignup} className="text-blue-600 hover:text-blue-700 font-medium transition-colors">
-                Create one
-              </button>
-            </p>
-          </div>
         </div>
       </div>
     </div>

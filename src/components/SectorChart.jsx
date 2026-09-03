@@ -32,16 +32,8 @@ const CustomLegend = ({ payload }) => (
 )
 
 export default function SectorChart({ result, proposals }) {
-  const proposalMap = useMemo(() => {
-    const map = {}
-    proposals.forEach(p => { map[p.id] = p })
-    return map
-  }, [proposals])
-
-  const funded = useMemo(() => {
-    if (!result?.funded) return []
-    return result.funded.map(id => proposalMap[id]).filter(Boolean)
-  }, [result, proposalMap])
+  // Backend returns full ProposalOut objects in funded/rejected
+  const funded = useMemo(() => result?.funded || [], [result])
 
   const sectorData = useMemo(() => {
     const map = {}
@@ -59,25 +51,13 @@ export default function SectorChart({ result, proposals }) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 animate-fade-in-up">
-      {/* Sector Breakdown */}
       <div className="card p-5 sm:p-6">
         <h3 className="section-title mb-4">Funded by Sector</h3>
         <ResponsiveContainer width="100%" height={280}>
           <PieChart>
-            <Pie
-              data={sectorData}
-              cx="50%"
-              cy="45%"
-              innerRadius="40%"
-              outerRadius="70%"
-              paddingAngle={3}
-              dataKey="value"
-              animationBegin={0}
-              animationDuration={800}
-            >
-              {sectorData.map((_, i) => (
-                <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="white" strokeWidth={2} />
-              ))}
+            <Pie data={sectorData} cx="50%" cy="45%" innerRadius="40%" outerRadius="70%"
+              paddingAngle={3} dataKey="value" animationBegin={0} animationDuration={800}>
+              {sectorData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="white" strokeWidth={2} />)}
             </Pie>
             <Tooltip content={<CustomTooltip />} />
             <Legend content={<CustomLegend />} />
@@ -85,7 +65,6 @@ export default function SectorChart({ result, proposals }) {
         </ResponsiveContainer>
       </div>
 
-      {/* Region Breakdown */}
       <div className="card p-5 sm:p-6">
         <h3 className="section-title mb-4">Funded by Region</h3>
         <div className="space-y-2.5">
@@ -96,18 +75,12 @@ export default function SectorChart({ result, proposals }) {
               <div key={r.name} className="flex items-center gap-2.5 sm:gap-3">
                 <span className="text-xs font-medium text-slate-600 w-20 sm:w-24 truncate flex-shrink-0" title={r.name}>{r.name}</span>
                 <div className="flex-1 h-5 sm:h-6 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-700 ease-out flex items-center justify-end pr-2"
-                    style={{ width: `${Math.max(pct, 10)}%`, backgroundColor: COLORS[i % COLORS.length] }}
-                  >
-                    {pct > 25 && (
-                      <span className="text-[10px] font-bold text-white drop-shadow-sm">{formatCurrency(r.value)}</span>
-                    )}
+                  <div className="h-full rounded-full transition-all duration-700 ease-out flex items-center justify-end pr-2"
+                    style={{ width: `${Math.max(pct, 10)}%`, backgroundColor: COLORS[i % COLORS.length] }}>
+                    {pct > 25 && <span className="text-[10px] font-bold text-white drop-shadow-sm">{formatCurrency(r.value)}</span>}
                   </div>
                 </div>
-                {pct <= 25 && (
-                  <span className="text-[10px] font-medium text-slate-500 flex-shrink-0">{formatCurrency(r.value)}</span>
-                )}
+                {pct <= 25 && <span className="text-[10px] font-medium text-slate-500 flex-shrink-0">{formatCurrency(r.value)}</span>}
               </div>
             )
           })}
