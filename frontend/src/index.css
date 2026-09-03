@@ -28,155 +28,98 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Tabular figures for all money/numbers */
   .tabular { font-variant-numeric: tabular-nums; }
   .serif { font-family: var(--serif); }
 }
 
 @layer components {
-  /* ── Ledger register (dense rows, rule-separated) ── */
-  .register {
-    border-top: 1px solid var(--rule);
-  }
+  /* ── Register ── */
+  .register { border-top: 1px solid var(--rule); }
   .register-row {
     border-bottom: 1px solid var(--rule);
     padding: 0.625rem 1rem;
     display: flex;
     align-items: center;
     gap: 1rem;
-    transition: background 0.15s;
+    transition: background 0.2s ease, padding-left 0.2s ease;
   }
   .register-row:hover {
     background: rgba(31, 75, 67, 0.03);
+    padding-left: 1.25rem;
   }
 
-  /* ── Brass seal stamp ── */
+  /* ── Seal ── */
   .seal {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
+    width: 28px; height: 28px; border-radius: 50%;
     border: 2px solid var(--brass);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
   }
-  .seal-filled {
-    background: var(--brass);
-  }
-  .seal-filled svg {
-    color: white;
-  }
+  .seal-filled { background: var(--brass); }
+  .seal-filled svg { color: white; }
 
-  /* ── Score bar (not a colored pill) ── */
-  .score-bar {
-    width: 48px;
-    height: 4px;
-    background: var(--rule);
-    border-radius: 2px;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-  .score-bar-fill {
-    height: 100%;
-    background: var(--petrol);
-    border-radius: 2px;
-    transition: width 0.4s ease;
-  }
+  /* ── Score bar ── */
+  .score-bar { width: 48px; height: 4px; background: var(--rule); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+  .score-bar-fill { height: 100%; background: var(--petrol); border-radius: 2px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 
   /* ── Buttons ── */
   .btn-primary {
-    background: var(--petrol);
-    color: white;
-    padding: 0.625rem 1.25rem;
-    border-radius: 4px;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    border: none;
-    cursor: pointer;
-    transition: opacity 0.15s;
+    background: var(--petrol); color: white;
+    padding: 0.625rem 1.25rem; border-radius: 4px;
+    font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.01em;
+    border: none; cursor: pointer;
+    transition: all 0.2s ease;
   }
-  .btn-primary:hover { opacity: 0.9; }
-  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
   .btn-secondary {
-    background: transparent;
-    color: var(--ink);
-    padding: 0.625rem 1.25rem;
-    border-radius: 4px;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    border: 1px solid var(--rule);
-    cursor: pointer;
-    transition: border-color 0.15s;
+    background: transparent; color: var(--ink);
+    padding: 0.625rem 1.25rem; border-radius: 4px;
+    font-size: 0.8125rem; font-weight: 500;
+    border: 1px solid var(--rule); cursor: pointer;
+    transition: all 0.2s ease;
   }
-  .btn-secondary:hover { border-color: var(--stone); }
+  .btn-secondary:hover { border-color: var(--stone); background: rgba(31,75,67,0.02); }
 
   .btn-ghost {
-    background: transparent;
-    color: var(--stone);
-    padding: 0.375rem 0.75rem;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    border: none;
-    cursor: pointer;
+    background: transparent; color: var(--stone);
+    padding: 0.375rem 0.75rem; border-radius: 4px;
+    font-size: 0.75rem; font-weight: 500;
+    border: none; cursor: pointer;
+    transition: color 0.15s;
   }
   .btn-ghost:hover { color: var(--ink); }
 
   /* ── Input ── */
   .input {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    background: var(--paper);
-    border: 1px solid var(--rule);
-    border-radius: 4px;
-    font-size: 0.8125rem;
-    color: var(--ink);
-    font-family: var(--grotesk);
+    width: 100%; padding: 0.5rem 0.75rem;
+    background: var(--paper); border: 1px solid var(--rule);
+    border-radius: 4px; font-size: 0.8125rem;
+    color: var(--ink); font-family: var(--grotesk);
     outline: none;
-    transition: border-color 0.15s;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
-  .input:focus { border-color: var(--petrol); }
+  .input:focus { border-color: var(--petrol); box-shadow: 0 0 0 2px rgba(31,75,67,0.08); }
   .input::placeholder { color: var(--stone); }
 
   /* ── Typography ── */
   .section-label {
-    font-size: 0.6875rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--stone);
+    font-size: 0.6875rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--stone);
   }
-
   .stat-value {
-    font-family: var(--serif);
-    font-size: 1.5rem;
-    line-height: 1.2;
-    color: var(--ink);
-    font-variant-numeric: tabular-nums;
+    font-family: var(--serif); font-size: 1.5rem;
+    line-height: 1.2; color: var(--ink); font-variant-numeric: tabular-nums;
   }
-
   .stat-label {
-    font-size: 0.6875rem;
-    color: var(--stone);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    font-size: 0.6875rem; color: var(--stone);
+    text-transform: uppercase; letter-spacing: 0.05em;
   }
 
-  /* ── Hairline rule ── */
-  .rule {
-    border: none;
-    border-top: 1px solid var(--rule);
-    margin: 0;
-  }
-
-  /* ── Official / filing layout ── */
-  .filing-box {
-    border: 1px solid var(--rule);
-    background: var(--paper);
-  }
+  .rule { border: none; border-top: 1px solid var(--rule); margin: 0; }
+  .filing-box { border: 1px solid var(--rule); background: var(--paper); }
 }
 
 @layer utilities {
@@ -198,43 +141,126 @@
 ::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--stone); }
 
-/* ── Brass seal stamp animation ── */
+/* ── Brass seal stamp ── */
 @keyframes stamp {
-  0% { transform: scale(1.8) rotate(-15deg); opacity: 0; }
-  60% { transform: scale(0.95) rotate(2deg); opacity: 1; }
+  0% { transform: scale(2) rotate(-20deg); opacity: 0; }
+  50% { transform: scale(0.9) rotate(3deg); opacity: 1; }
   100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 .animate-stamp {
-  animation: stamp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: stamp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   opacity: 0;
 }
 
 /* ── Fade in ── */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
 }
 
-/* ── Number tick (for loading) ── */
+/* ── Slide in from left ── */
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-left {
+  animation: slideInLeft 0.3s ease-out forwards;
+}
+
+/* ── Slide in from right ── */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out forwards;
+}
+
+/* ── Scale in ── */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in {
+  animation: scaleIn 0.25s ease-out forwards;
+}
+
+/* ── Number tick ── */
 @keyframes tickUp {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-tick {
   animation: tickUp 0.2s ease-out forwards;
 }
 
+/* ── Progress bar fill ── */
+@keyframes fillBar {
+  from { width: 0%; }
+}
+.animate-fill-bar {
+  animation: fillBar 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ── Pulse dot ── */
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.animate-pulse-dot {
+  animation: pulseDot 1.5s ease-in-out infinite;
+}
+
+/* ── Shimmer ── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, var(--rule) 25%, var(--parchment) 50%, var(--rule) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 2px;
+}
+
+/* ── Hover underline ── */
+.hover-underline {
+  position: relative;
+}
+.hover-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--petrol);
+  transition: width 0.2s ease;
+}
+.hover-underline:hover::after {
+  width: 100%;
+}
+
+/* ── Page transition wrapper ── */
+.page-enter {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
-  .animate-stamp,
-  .animate-fade-in,
-  .animate-tick {
+  .animate-stamp, .animate-fade-in, .animate-slide-in-left,
+  .animate-slide-in-right, .animate-scale-in, .animate-tick,
+  .animate-fill-bar, .animate-pulse-dot, .shimmer {
     animation: none !important;
     opacity: 1 !important;
+    transform: none !important;
   }
+  .register-row { transition: none !important; }
+  .input { transition: none !important; }
+  .btn-primary, .btn-secondary { transition: none !important; }
 }
 
 /* ── Selection ── */

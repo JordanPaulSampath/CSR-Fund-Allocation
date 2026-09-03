@@ -61,9 +61,11 @@ export default function AllocationPanel({ budget, constraints, setConstraints, o
         {/* Step checklist */}
         <div className="space-y-2">
           {steps.map((s, i) => (
-            <div key={i} className="flex items-center gap-2 text-xs" style={{ color: s.done ? 'var(--petrol)' : 'var(--stone)' }}>
-              <span style={{ width: '14px', textAlign: 'center' }}>{s.done ? '✓' : '○'}</span>
-              <span>{s.label}</span>
+            <div key={i} className="flex items-center gap-2 text-xs animate-slide-in-left" style={{ color: s.done ? 'var(--petrol)' : 'var(--stone)', animationDelay: `${i * 100}ms` }}>
+              <span style={{ width: '14px', textAlign: 'center' }}>
+                {s.done ? '✓' : (i === step ? <span className="inline-block w-2 h-2 rounded-full animate-pulse-dot" style={{ background: 'var(--petrol)' }} /> : '○')}
+              </span>
+              <span style={{ textDecoration: s.done ? 'line-through' : 'none', opacity: s.done ? 0.6 : 1 }}>{s.label}</span>
             </div>
           ))}
         </div>
@@ -81,7 +83,7 @@ export default function AllocationPanel({ budget, constraints, setConstraints, o
       </div>
 
       {showConstraints && (
-        <div className="mb-4 p-3 space-y-3" style={{ background: 'var(--parchment)', border: '1px solid var(--rule)' }}>
+        <div className="mb-4 p-3 space-y-3 animate-scale-in" style={{ background: 'var(--parchment)', border: '1px solid var(--rule)' }}>
           {[
             { key: 'min_regions', label: 'Min regions', min: 1, max: 10 },
             { key: 'min_sectors', label: 'Min sectors', min: 1, max: 10 },

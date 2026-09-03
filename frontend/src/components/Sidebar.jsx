@@ -37,14 +37,14 @@ export default function Sidebar({ activeView, setActiveView, collapsed, setColla
           </div>
 
           {/* Nav sections */}
-          {NAV_ITEMS.map(section => (
-            <div key={section.section} className="mb-5">
+          {NAV_ITEMS.map((section, si) => (
+            <div key={section.section} className="mb-5 animate-slide-in-left" style={{ animationDelay: `${si * 80}ms` }}>
               <p className="section-label mb-2">{section.section}</p>
               {section.items.map(item => {
                 const isActive = activeView === item.id
                 return (
                   <button key={item.id} onClick={() => setActiveView(item.id)}
-                    className="w-full text-left px-2 py-1.5 text-sm rounded transition-colors"
+                    className="w-full text-left px-2 py-1.5 text-sm rounded transition-all duration-200 hover-underline"
                     style={{
                       color: isActive ? 'var(--petrol)' : 'var(--ink)',
                       fontWeight: isActive ? 600 : 400,

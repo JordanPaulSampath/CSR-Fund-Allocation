@@ -56,11 +56,11 @@ export default function ResultsView({ result, proposals, budget }) {
   }, [funded, rejected])
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 page-enter">
 
       {/* ── Hero statement ── */}
       <div className="text-center py-4">
-        <p className="font-serif text-2xl sm:text-3xl" style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}>
+        <p className="font-serif text-2xl sm:text-3xl animate-scale-in" style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}>
           {formatCurrency(totalFunded)} of {formatCurrency(totalBudget)} allocated
         </p>
         <p className="text-xs mt-2" style={{ color: 'var(--stone)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
@@ -79,7 +79,7 @@ export default function ResultsView({ result, proposals, budget }) {
       <div>
         <p className="section-label mb-2">Budget Utilization</p>
         <div className="h-2 rounded-sm overflow-hidden" style={{ background: 'var(--rule)' }}>
-          <div className="h-full rounded-sm transition-all duration-1000" style={{ width: `${utilizationPct}%`, background: 'var(--petrol)' }} />
+          <div className="h-full rounded-sm animate-fill-bar" style={{ width: `${utilizationPct}%`, background: 'var(--petrol)' }} />
         </div>
         <div className="flex justify-between mt-1.5">
           <span className="font-serif text-xs tabular" style={{ color: 'var(--ink)' }}>{formatCurrency(totalFunded)}</span>
@@ -136,7 +136,7 @@ export default function ResultsView({ result, proposals, budget }) {
         </div>
         <div className="register">
           {funded.map((p, i) => (
-            <div key={p.id || i} className="register-row">
+            <div key={p.id || i} className="register-row animate-slide-in-left" style={{ animationDelay: `${i * 40}ms` }}>
               {stamped && <Seal delay={300 + i * 80} />}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{p.ngo_name}</p>
