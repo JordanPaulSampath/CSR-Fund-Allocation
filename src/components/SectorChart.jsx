@@ -20,6 +20,17 @@ const CustomTooltip = ({ active, payload }) => {
   )
 }
 
+const CustomLegend = ({ payload }) => (
+  <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-3">
+    {payload?.map((entry, i) => (
+      <div key={i} className="flex items-center gap-1.5">
+        <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: entry.color }} />
+        <span className="text-[11px] text-slate-600">{entry.value}</span>
+      </div>
+    ))}
+  </div>
+)
+
 export default function SectorChart({ result, proposals }) {
   const proposalMap = useMemo(() => {
     const map = {}
@@ -34,39 +45,31 @@ export default function SectorChart({ result, proposals }) {
 
   const sectorData = useMemo(() => {
     const map = {}
-    funded.forEach(p => {
-      map[p.sector] = (map[p.sector] || 0) + (p.requested_amount || 0)
-    })
-    return Object.entries(map)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
+    funded.forEach(p => { map[p.sector] = (map[p.sector] || 0) + (p.requested_amount || 0) })
+    return Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
   }, [funded])
 
   const regionData = useMemo(() => {
     const map = {}
-    funded.forEach(p => {
-      map[p.region] = (map[p.region] || 0) + (p.requested_amount || 0)
-    })
-    return Object.entries(map)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
+    funded.forEach(p => { map[p.region] = (map[p.region] || 0) + (p.requested_amount || 0) })
+    return Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
   }, [funded])
 
   if (sectorData.length === 0) return null
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in-up">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 animate-fade-in-up">
       {/* Sector Breakdown */}
-      <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6">
-        <h3 className="text-sm font-semibold text-slate-700 mb-4">Funded by Sector</h3>
-        <ResponsiveContainer width="100%" height={260}>
+      <div className="card p-5 sm:p-6">
+        <h3 className="section-title mb-4">Funded by Sector</h3>
+        <ResponsiveContainer width="100%" height={280}>
           <PieChart>
             <Pie
               data={sectorData}
               cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={95}
+              cy="45%"
+              innerRadius="40%"
+              outerRadius="70%"
               paddingAngle={3}
               dataKey="value"
               animationBegin={0}
@@ -77,40 +80,33 @@ export default function SectorChart({ result, proposals }) {
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip />} />
-            <Legend
-              verticalAlign="bottom"
-              height={36}
-              formatter={(value) => <span className="text-xs text-slate-600">{value}</span>}
-            />
+            <Legend content={<CustomLegend />} />
           </PieChart>
         </ResponsiveContainer>
       </div>
 
       {/* Region Breakdown */}
-      <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6">
-        <h3 className="text-sm font-semibold text-slate-700 mb-4">Funded by Region</h3>
+      <div className="card p-5 sm:p-6">
+        <h3 className="section-title mb-4">Funded by Region</h3>
         <div className="space-y-2.5">
           {regionData.map((r, i) => {
             const maxVal = regionData[0]?.value || 1
             const pct = (r.value / maxVal) * 100
             return (
-              <div key={r.name} className="flex items-center gap-3">
-                <span className="text-xs font-medium text-slate-600 w-24 truncate" title={r.name}>{r.name}</span>
-                <div className="flex-1 h-6 bg-slate-100 rounded-full overflow-hidden">
+              <div key={r.name} className="flex items-center gap-2.5 sm:gap-3">
+                <span className="text-xs font-medium text-slate-600 w-20 sm:w-24 truncate flex-shrink-0" title={r.name}>{r.name}</span>
+                <div className="flex-1 h-5 sm:h-6 bg-slate-100 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-700 ease-out flex items-center justify-end pr-2"
-                    style={{
-                      width: `${Math.max(pct, 8)}%`,
-                      backgroundColor: COLORS[i % COLORS.length],
-                    }}
+                    style={{ width: `${Math.max(pct, 10)}%`, backgroundColor: COLORS[i % COLORS.length] }}
                   >
-                    {pct > 20 && (
-                      <span className="text-[10px] font-bold text-white">{formatCurrency(r.value)}</span>
+                    {pct > 25 && (
+                      <span className="text-[10px] font-bold text-white drop-shadow-sm">{formatCurrency(r.value)}</span>
                     )}
                   </div>
                 </div>
-                {pct <= 20 && (
-                  <span className="text-[10px] font-medium text-slate-500">{formatCurrency(r.value)}</span>
+                {pct <= 25 && (
+                  <span className="text-[10px] font-medium text-slate-500 flex-shrink-0">{formatCurrency(r.value)}</span>
                 )}
               </div>
             )

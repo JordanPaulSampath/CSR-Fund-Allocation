@@ -14,9 +14,8 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 function AppShell() {
   const { isAuthenticated } = useAuth()
-  const [authView, setAuthView] = useState('login') // 'login' | 'signup'
+  const [authView, setAuthView] = useState('login')
 
-  // Not authenticated — show login/signup
   if (!isAuthenticated) {
     return authView === 'login'
       ? <LoginPage onSwitchToSignup={() => setAuthView('signup')} />
@@ -34,81 +33,38 @@ function Dashboard() {
   const [loading, setLoading] = useState(false)
   const [allocating, setAllocating] = useState(false)
   const [error, setError] = useState(null)
-  const [activeView, setActiveView] = useState('proposals') // 'proposals' | 'results' | 'profile'
+  const [activeView, setActiveView] = useState('proposals')
   const [constraints, setConstraints] = useState({
     min_regions: 2,
     min_sectors: 2,
     max_per_region_ratio: 0.5,
   })
 
-  // Bulk load sample data
   const loadSampleData = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true); setError(null)
     try {
       const res = await fetch(`${API_BASE}/proposals/sample`)
       if (!res.ok) throw new Error(`Failed to load sample data: ${res.statusText}`)
-      const data = await res.json()
-      setProposals(data)
-      setAllocationResult(null)
-      setActiveView('proposals')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
+      setProposals(await res.json())
+      setAllocationResult(null); setActiveView('proposals')
+    } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [])
 
-  // Import proposals from CSV
   const importCSV = useCallback(async (parsedRows) => {
-    setLoading(true)
-    setError(null)
+    setLoading(true); setError(null)
     try {
       const res = await fetch(`${API_BASE}/proposals/bulk`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(parsedRows),
       })
-      if (!res.ok) {
-        const errBody = await res.text()
-        throw new Error(`Bulk import failed: ${errBody}`)
-      }
-      const data = await res.json()
-      setProposals(data)
-      setAllocationResult(null)
-      setActiveView('proposals')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
+      if (!res.ok) throw new Error(`Bulk import failed: ${await res.text()}`)
+      setProposals(await res.json())
+      setAllocationResult(null); setActiveView('proposals')
+    } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [])
 
-  // Add a single proposal
-  const addProposal = useCallback(async (proposal) => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch(`${API_BASE}/proposals`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(proposal),
-      })
-      if (!res.ok) throw new Error(`Failed to add proposal: ${res.statusText}`)
-      const data = await res.json()
-      setProposals(prev => [...prev, data])
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  // Run allocation
   const runAllocation = useCallback(async () => {
-    setAllocating(true)
-    setError(null)
-    setAllocationResult(null)
+    setAllocating(true); setError(null); setAllocationResult(null)
     try {
       const res = await fetch(`${API_BASE}/allocate`, {
         method: 'POST',
@@ -116,54 +72,34 @@ function Dashboard() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('csr_helper_token')}`,
         },
-        body: JSON.stringify({
-          budget,
-          proposals: proposals.map(p => p.id),
-          constraints,
-        }),
+        body: JSON.stringify({ budget, proposals: proposals.map(p => p.id), constraints }),
       })
-      if (!res.ok) {
-        const errBody = await res.text()
-        throw new Error(`Allocation failed: ${errBody}`)
-      }
-      const data = await res.json()
-      setAllocationResult(data)
-      setActiveView('results')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setAllocating(false)
-    }
+      if (!res.ok) throw new Error(`Allocation failed: ${await res.text()}`)
+      setAllocationResult(await res.json()); setActiveView('results')
+    } catch (err) { setError(err.message) } finally { setAllocating(false) }
   }, [budget, proposals, constraints])
 
-  // Clear everything
   const resetAll = useCallback(() => {
-    setProposals([])
-    setAllocationResult(null)
-    setError(null)
-    setActiveView('proposals')
+    setProposals([]); setAllocationResult(null); setError(null); setActiveView('proposals')
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100">
+    <div className="min-h-screen bg-[#f8fafc]">
       <Header
-        budget={budget}
-        setBudget={setBudget}
-        activeView={activeView}
-        setActiveView={setActiveView}
-        hasResults={!!allocationResult}
-        hasProposals={proposals.length > 0}
+        budget={budget} setBudget={setBudget}
+        activeView={activeView} setActiveView={setActiveView}
+        hasResults={!!allocationResult} hasProposals={proposals.length > 0}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 lg:py-8">
         {/* Error banner */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-2 animate-fade-in-up">
+          <div className="mb-5 p-3.5 sm:p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-2 animate-fade-in-up">
             <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            {error}
-            <button onClick={() => setError(null)} className="ml-auto text-red-500 hover:text-red-700">
+            <span className="min-w-0">{error}</span>
+            <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-600 flex-shrink-0 transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -174,55 +110,50 @@ function Dashboard() {
         {activeView === 'profile' ? (
           <ProfilePage />
         ) : activeView === 'proposals' ? (
-          <div className="space-y-6">
+          <div className="space-y-5 sm:space-y-6">
             {/* Welcome banner */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-lg animate-fade-in-up">
-              <h2 className="text-lg font-bold">Welcome, {user?.company_name || 'Company'} 👋</h2>
-              <p className="text-blue-100 text-sm mt-1">Upload proposals, score them, and run the ILP optimizer to find the best allocation.</p>
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-5 sm:p-6 text-white shadow-lg animate-fade-in-up">
+              <h2 className="text-lg sm:text-xl font-bold">
+                Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {user?.company_name || 'Company'} 👋
+              </h2>
+              <p className="text-blue-100 text-sm mt-1 max-w-xl">
+                Upload proposals, score them, and run the ILP optimizer to find the best allocation.
+              </p>
             </div>
 
             {/* Actions bar */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
               <CSVUpload onImport={importCSV} disabled={loading} />
-              <button
-                onClick={loadSampleData}
-                disabled={loading}
-                className="px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-medium text-sm hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
-              >
+              <button onClick={loadSampleData} disabled={loading} className="btn-primary !bg-emerald-600 !from-emerald-600 !to-emerald-600 hover:!from-emerald-700 hover:!to-emerald-700">
                 {loading ? 'Loading…' : 'Load Sample Data'}
               </button>
               {proposals.length > 0 && (
-                <button
-                  onClick={resetAll}
-                  className="px-4 py-2.5 bg-slate-200 text-slate-600 rounded-xl font-medium text-sm hover:bg-slate-300 transition-all"
-                >
+                <button onClick={resetAll} className="btn-secondary">
                   Clear All
                 </button>
               )}
             </div>
 
-            {/* Proposal List */}
-            <ProposalList
-              proposals={proposals}
-              loading={loading}
-              onLoadSample={loadSampleData}
-            />
+            {/* Two-column layout on large screens: Proposals | Controls */}
+            {proposals.length > 0 ? (
+              <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-5 sm:gap-6 items-start">
+                {/* Proposal list */}
+                <ProposalList proposals={proposals} loading={loading} onLoadSample={loadSampleData} />
 
-            {/* Allocation Panel */}
-            {proposals.length > 0 && (
-              <AllocationPanel
-                budget={budget}
-                constraints={constraints}
-                setConstraints={setConstraints}
-                onAllocate={runAllocation}
-                allocating={allocating}
-                proposalCount={proposals.length}
-              />
+                {/* Allocation controls — sticky on desktop */}
+                <div className="xl:sticky xl:top-20">
+                  <AllocationPanel
+                    budget={budget} constraints={constraints} setConstraints={setConstraints}
+                    onAllocate={runAllocation} allocating={allocating} proposalCount={proposals.length}
+                  />
+                </div>
+              </div>
+            ) : (
+              <ProposalList proposals={proposals} loading={loading} onLoadSample={loadSampleData} />
             )}
           </div>
         ) : (
-          <div className="space-y-6">
-            {/* Back to proposals */}
+          <div className="space-y-5 sm:space-y-6">
             <button
               onClick={() => setActiveView('proposals')}
               className="flex items-center gap-2 text-slate-500 hover:text-slate-700 font-medium text-sm transition-colors"
@@ -235,11 +166,7 @@ function Dashboard() {
 
             {allocationResult && (
               <>
-                <ResultsView
-                  result={allocationResult}
-                  proposals={proposals}
-                  budget={budget}
-                />
+                <ResultsView result={allocationResult} proposals={proposals} budget={budget} />
                 <SectorChart result={allocationResult} proposals={proposals} />
               </>
             )}
