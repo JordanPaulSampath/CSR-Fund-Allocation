@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.freebuff/
+*.local
+.env
+.env.*
