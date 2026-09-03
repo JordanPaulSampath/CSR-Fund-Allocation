@@ -4,9 +4,7 @@ import { useAuth } from '../context/AuthContext'
 export default function LoginPage() {
   const { login, signup, loading, error, clearError } = useAuth()
   const [mode, setMode] = useState('login')
-  const [form, setForm] = useState({
-    username: '', email: '', password: '', company_name: '',
-  })
+  const [form, setForm] = useState({ username: '', email: '', password: '', company_name: '' })
   const [showPassword, setShowPassword] = useState(false)
 
   const update = (field, value) => setForm(f => ({ ...f, [field]: value }))
@@ -14,144 +12,103 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      if (mode === 'login') {
-        await login(form.username, form.password)
-      } else {
-        await signup({
-          username: form.username,
-          email: form.email,
-          password: form.password,
-          company_name: form.company_name,
-        })
-      }
+      if (mode === 'login') await login(form.username, form.password)
+      else await signup({ username: form.username, email: form.email, password: form.password, company_name: form.company_name })
     } catch {}
   }
 
-  const switchMode = (newMode) => {
-    setMode(newMode)
-    clearError()
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--parchment)' }}>
       <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="text-center mb-6 sm:mb-8 animate-fade-in-up">
-          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-800">CSR Helper</h1>
-          <p className="text-sm text-slate-400 mt-1">Intelligent Fund Allocation Platform</p>
+        {/* Cover page header */}
+        <div className="mb-10 text-center animate-fade-in">
+          <h1 className="font-serif text-3xl sm:text-4xl" style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}>
+            CSR Helper
+          </h1>
+          <hr className="mt-4 mx-auto" style={{ width: '60px', borderColor: 'var(--brass)', borderWidth: '1px' }} />
+          <p className="mt-3 text-xs" style={{ color: 'var(--stone)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            Intelligent Fund Allocation
+          </p>
         </div>
 
-        {/* Card */}
-        <div className="card p-6 sm:p-8 animate-fade-in-up">
-          {/* ── Tab toggle: Sign In / Sign Up ── */}
-          <div className="flex bg-slate-100 rounded-xl p-1 mb-6">
-            <button
-              onClick={() => switchMode('login')}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                mode === 'login'
-                  ? 'bg-white text-slate-800 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
+        {/* Register card */}
+        <div className="p-6 sm:p-8 animate-fade-in" style={{ background: 'var(--paper)', border: '1px solid var(--rule)' }}>
+          {/* Tab toggle */}
+          <div className="flex mb-6" style={{ borderBottom: '1px solid var(--rule)' }}>
+            <button onClick={() => { setMode('login'); clearError() }}
+              className="flex-1 pb-2 text-xs font-semibold uppercase tracking-widest transition-colors"
+              style={{
+                color: mode === 'login' ? 'var(--petrol)' : 'var(--stone)',
+                borderBottom: mode === 'login' ? '2px solid var(--petrol)' : '2px solid transparent',
+              }}>
               Sign In
             </button>
-            <button
-              onClick={() => switchMode('signup')}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                mode === 'signup'
-                  ? 'bg-white text-slate-800 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
+            <button onClick={() => { setMode('signup'); clearError() }}
+              className="flex-1 pb-2 text-xs font-semibold uppercase tracking-widest transition-colors"
+              style={{
+                color: mode === 'signup' ? 'var(--petrol)' : 'var(--stone)',
+                borderBottom: mode === 'signup' ? '2px solid var(--petrol)' : '2px solid transparent',
+              }}>
               Sign Up
             </button>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-center gap-2">
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <div className="mb-4 px-3 py-2 text-xs" style={{ background: 'rgba(178,59,59,0.06)', border: '1px solid rgba(178,59,59,0.2)', color: 'var(--brick)' }}>
               {error}
-              <button onClick={clearError} className="ml-auto text-red-400 hover:text-red-600 transition-colors">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Username */}
             <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1.5">Username</label>
+              <label className="section-label block mb-1.5">Username</label>
               <input type="text" value={form.username} onChange={e => update('username', e.target.value)}
-                placeholder="Enter your username" required className="input" autoComplete="username" />
+                placeholder="Enter username" required className="input" autoComplete="username" />
             </div>
 
-            {/* Email — signup only */}
             {mode === 'signup' && (
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1.5">Email</label>
-                <input type="email" value={form.email} onChange={e => update('email', e.target.value)}
-                  placeholder="csr@company.com" required className="input" autoComplete="email" />
-              </div>
+              <>
+                <div>
+                  <label className="section-label block mb-1.5">Email</label>
+                  <input type="email" value={form.email} onChange={e => update('email', e.target.value)}
+                    placeholder="csr@company.com" required className="input" autoComplete="email" />
+                </div>
+                <div>
+                  <label className="section-label block mb-1.5">Company Name</label>
+                  <input type="text" value={form.company_name} onChange={e => update('company_name', e.target.value)}
+                    placeholder="Company Pvt. Ltd." className="input" />
+                </div>
+              </>
             )}
 
-            {/* Company Name — signup only */}
-            {mode === 'signup' && (
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1.5">Company Name</label>
-                <input type="text" value={form.company_name} onChange={e => update('company_name', e.target.value)}
-                  placeholder="Acme Corp Pvt. Ltd." className="input" />
-              </div>
-            )}
-
-            {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1.5">Password</label>
+              <label className="section-label block mb-1.5">Password</label>
               <div className="relative">
                 <input type={showPassword ? 'text' : 'password'} value={form.password}
                   onChange={e => update('password', e.target.value)}
-                  placeholder={mode === 'signup' ? 'Min 6 characters' : 'Enter your password'}
+                  placeholder={mode === 'signup' ? 'Min 6 characters' : 'Enter password'}
                   required minLength={mode === 'signup' ? 6 : undefined}
                   className="input pr-10" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
-                  {showPassword ? (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                    </svg>
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  )}
+                  className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--stone)' }}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                      d={showPassword ? "M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M3 3l18 18" : "M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"} />
+                  </svg>
                 </button>
               </div>
             </div>
 
             <button type="submit" disabled={loading || !form.username || !form.password}
               className="btn-primary w-full mt-2">
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  {mode === 'login' ? 'Signing in…' : 'Creating account…'}
-                </span>
-              ) : mode === 'login' ? 'Sign In' : 'Create Account'}
+              {loading ? 'Processing…' : mode === 'login' ? 'Sign In' : 'Create Account'}
             </button>
           </form>
 
           {mode === 'login' && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-xl text-center">
-              <p className="text-xs text-blue-600">
-                Demo: <strong>csr_manager</strong> / <strong>saarthi2026</strong>
+            <div className="mt-5 pt-4 text-center" style={{ borderTop: '1px solid var(--rule)' }}>
+              <p className="text-xs" style={{ color: 'var(--stone)' }}>
+                Demo credentials: <span style={{ color: 'var(--ink)' }}>csr_manager</span> / <span style={{ color: 'var(--ink)' }}>saarthi2026</span>
               </p>
             </div>
           )}

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,176 +6,239 @@
 
 @layer base {
   :root {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    --parchment: #EDEAE1;
+    --ink: #1B211F;
+    --petrol: #1F4B43;
+    --brass: #9C6B30;
+    --stone: #8A8578;
+    --brick: #B23B3B;
+    --rule: #D4CFC5;
+    --paper: #F5F3EE;
+    --serif: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+    --grotesk: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: var(--grotesk);
     color-scheme: light;
   }
 
   body {
     margin: 0;
-    background: #f8fafc;
+    background: var(--parchment);
+    color: var(--ink);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
   }
+
+  /* Tabular figures for all money/numbers */
+  .tabular { font-variant-numeric: tabular-nums; }
+  .serif { font-family: var(--serif); }
 }
 
 @layer components {
-  /* ── Card system ── */
-  .card {
-    @apply rounded-2xl border border-slate-200/80 bg-white shadow-sm;
+  /* ── Ledger register (dense rows, rule-separated) ── */
+  .register {
+    border-top: 1px solid var(--rule);
   }
-  .card-hover {
-    @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md;
+  .register-row {
+    border-bottom: 1px solid var(--rule);
+    padding: 0.625rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: background 0.15s;
   }
-  .card-compact {
-    @apply rounded-xl border border-slate-200/60 bg-white shadow-sm;
+  .register-row:hover {
+    background: rgba(31, 75, 67, 0.03);
   }
 
-  /* ── Typography ── */
-  .section-title {
-    @apply text-base font-semibold text-slate-800;
+  /* ── Brass seal stamp ── */
+  .seal {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--brass);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
-  .section-subtitle {
-    @apply text-sm text-slate-500;
+  .seal-filled {
+    background: var(--brass);
   }
-  .label {
-    @apply text-xs font-medium text-slate-500 uppercase tracking-wider;
+  .seal-filled svg {
+    color: white;
+  }
+
+  /* ── Score bar (not a colored pill) ── */
+  .score-bar {
+    width: 48px;
+    height: 4px;
+    background: var(--rule);
+    border-radius: 2px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .score-bar-fill {
+    height: 100%;
+    background: var(--petrol);
+    border-radius: 2px;
+    transition: width 0.4s ease;
   }
 
   /* ── Buttons ── */
   .btn-primary {
-    @apply px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold text-sm
-           hover:from-blue-700 hover:to-indigo-700 active:scale-[0.98]
-           disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100
-           transition-all duration-200 shadow-md hover:shadow-lg;
+    background: var(--petrol);
+    color: white;
+    padding: 0.625rem 1.25rem;
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s;
   }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
   .btn-secondary {
-    @apply px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-medium text-sm
-           hover:bg-slate-200 active:scale-[0.98]
-           transition-all duration-200;
+    background: transparent;
+    color: var(--ink);
+    padding: 0.625rem 1.25rem;
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    border: 1px solid var(--rule);
+    cursor: pointer;
+    transition: border-color 0.15s;
   }
+  .btn-secondary:hover { border-color: var(--stone); }
+
   .btn-ghost {
-    @apply px-3 py-1.5 text-slate-500 rounded-lg font-medium text-sm
-           hover:text-slate-700 hover:bg-slate-100
-           transition-all duration-200;
+    background: transparent;
+    color: var(--stone);
+    padding: 0.375rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
   }
+  .btn-ghost:hover { color: var(--ink); }
 
   /* ── Input ── */
   .input {
-    @apply w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800
-           placeholder-slate-400
-           focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400
-           transition-all duration-200;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    color: var(--ink);
+    font-family: var(--grotesk);
+    outline: none;
+    transition: border-color 0.15s;
   }
-  .input-sm {
-    @apply px-3 py-1.5 text-sm rounded-lg;
+  .input:focus { border-color: var(--petrol); }
+  .input::placeholder { color: var(--stone); }
+
+  /* ── Typography ── */
+  .section-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--stone);
   }
 
-  /* ── Badge ── */
-  .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  .stat-value {
+    font-family: var(--serif);
+    font-size: 1.5rem;
+    line-height: 1.2;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
   }
 
-  /* ── Shimmer loading ── */
-  .shimmer {
-    background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s ease-in-out infinite;
-    @apply rounded-lg;
+  .stat-label {
+    font-size: 0.6875rem;
+    color: var(--stone);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Hairline rule ── */
+  .rule {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 0;
+  }
+
+  /* ── Official / filing layout ── */
+  .filing-box {
+    border: 1px solid var(--rule);
+    background: var(--paper);
   }
 }
 
 @layer utilities {
-  /* ── Micro-interactions ── */
-  .hover-lift {
-    @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md;
-  }
-  .active-press {
-    @apply active:scale-[0.98] transition-transform duration-100;
-  }
+  .font-serif { font-family: var(--serif); }
+  .font-grotesk { font-family: var(--grotesk); }
+  .text-ink { color: var(--ink); }
+  .text-petrol { color: var(--petrol); }
+  .text-brass { color: var(--brass); }
+  .text-stone { color: var(--stone); }
+  .text-brick { color: var(--brick); }
+  .bg-parchment { background-color: var(--parchment); }
+  .bg-paper { background-color: var(--paper); }
+  .border-rule { border-color: var(--rule); }
 }
 
-/* ── Budget bar fill animation ── */
-@keyframes budgetFill {
-  from { width: 0%; }
-}
-.animate-budget-fill {
-  animation: budgetFill 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--stone); }
 
-/* ── Checkmark draw animation ── */
-@keyframes checkDraw {
-  from { stroke-dashoffset: 24; }
-  to { stroke-dashoffset: 0; }
+/* ── Brass seal stamp animation ── */
+@keyframes stamp {
+  0% { transform: scale(1.8) rotate(-15deg); opacity: 0; }
+  60% { transform: scale(0.95) rotate(2deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
-.animate-check {
-  stroke-dasharray: 24;
-  animation: checkDraw 0.4s ease-out forwards;
-}
-
-/* ── Custom scrollbar ── */
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+.animate-stamp {
+  animation: stamp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  opacity: 0;
 }
 
 /* ── Fade in ── */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(12px); }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* ── Number tick (for loading) ── */
+@keyframes tickUp {
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.animate-fade-in-up {
-  animation: fadeInUp 0.35s ease-out forwards;
+.animate-tick {
+  animation: tickUp 0.2s ease-out forwards;
 }
 
-/* ── Fade in scale ── */
-@keyframes fadeInScale {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-.animate-fade-in-scale {
-  animation: fadeInScale 0.3s ease-out forwards;
-}
-
-/* ── Float ── */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
-}
-.animate-float {
-  animation: float 2s ease-in-out infinite;
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .animate-stamp,
+  .animate-fade-in,
+  .animate-tick {
+    animation: none !important;
+    opacity: 1 !important;
+  }
 }
 
-/* ── Pulse ring ── */
-@keyframes pulseRing {
-  0% { transform: scale(0.8); opacity: 1; }
-  80%, 100% { transform: scale(2); opacity: 0; }
-}
-.animate-pulse-ring {
-  animation: pulseRing 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-}
-
-/* ── Stagger children ── */
-.stagger > * { opacity: 0; animation: fadeInUp 0.35s ease-out forwards; }
-.stagger > *:nth-child(1) { animation-delay: 0ms; }
-.stagger > *:nth-child(2) { animation-delay: 50ms; }
-.stagger > *:nth-child(3) { animation-delay: 100ms; }
-.stagger > *:nth-child(4) { animation-delay: 150ms; }
-.stagger > *:nth-child(5) { animation-delay: 200ms; }
-.stagger > *:nth-child(6) { animation-delay: 250ms; }
-
-/* ── Selection color ── */
+/* ── Selection ── */
 ::selection {
-  background: #bfdbfe;
-  color: #1e293b;
+  background: rgba(31, 75, 67, 0.15);
+  color: var(--ink);
 }

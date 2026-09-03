@@ -1,15 +1,9 @@
 import { useState, useEffect } from 'react'
 
-const STEP_LABELS = [
-  { key: 'scoring', label: 'Scoring proposals' },
-  { key: 'constraints', label: 'Applying constraints' },
-  { key: 'solving', label: 'Finding optimal allocation' },
-  { key: 'finalizing', label: 'Finalizing results' },
-]
-
 export default function AllocationPanel({ budget, constraints, setConstraints, onAllocate, onCompare, allocating, proposalCount }) {
   const [step, setStep] = useState(-1)
-  const [complete, setComplete] = useState(false)
+  const [tickEvaluated, setTickEvaluated] = useState(0)
+  const [tickBudget, setTickBudget] = useState(budget)
   const [showConstraints, setShowConstraints] = useState(false)
 
   const formatBudget = (v) => {
@@ -19,126 +13,103 @@ export default function AllocationPanel({ budget, constraints, setConstraints, o
   }
 
   useEffect(() => {
-    if (!allocating) {
-      if (step >= 3) { setComplete(true); setTimeout(() => { setComplete(false); setStep(-1) }, 2500) }
-      else setStep(-1)
-      return
-    }
-    setComplete(false); setStep(0)
-    const t1 = setTimeout(() => setStep(1), 800)
-    const t2 = setTimeout(() => setStep(2), 1600)
-    const t3 = setTimeout(() => setStep(3), 2400)
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
-  }, [allocating])
+    if (!allocating) { setStep(-1); setTickEvaluated(0); setTickBudget(budget); return }
+    setStep(0); setTickEvaluated(0); setTickBudget(budget)
 
-  if (complete) {
-    return (
-      <div className="card border-emerald-200 bg-emerald-50/50 p-6 sm:p-8 text-center animate-fade-in-scale">
-        <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-3">
-          <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <h3 className="text-base font-bold text-emerald-800">Allocation Complete</h3>
-      </div>
-    )
-  }
+    // Simulate ticking numbers
+    let count = 0
+    const interval = setInterval(() => {
+      count++
+      setTickEvaluated(Math.min(count * 3, proposalCount))
+      setTickBudget(Math.max(budget - count * 12000, budget * 0.15))
+      if (count >= proposalCount / 3) clearInterval(interval)
+    }, 100)
 
+    const t1 = setTimeout(() => setStep(1), 600)
+    const t2 = setTimeout(() => setStep(2), 1200)
+    const t3 = setTimeout(() => { setStep(3); clearInterval(interval) }, 1800)
+    return () => { clearInterval(interval); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
+  }, [allocating, proposalCount, budget])
+
+  // Allocating state
   if (allocating) {
+    const steps = [
+      { label: 'Evaluating proposals', done: step >= 1 },
+      { label: 'Applying constraints', done: step >= 2 },
+      { label: 'Solving allocation', done: step >= 3 },
+    ]
     return (
-      <div className="card border-blue-200 shadow-md p-6 sm:p-8 animate-fade-in-up">
-        <div className="flex flex-col items-center text-center">
-          <div className="relative w-14 h-14 mb-4">
-            <div className="absolute inset-0 rounded-full border-[3px] border-blue-100" />
-            <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-blue-600 animate-spin" />
-            <div className="absolute inset-2.5 rounded-full bg-blue-50 flex items-center justify-center">
-              <svg className="w-5 h-5 text-blue-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+      <div className="p-5" style={{ background: 'var(--paper)', border: '1px solid var(--rule)' }}>
+        <p className="section-label mb-4">Optimizing</p>
+
+        {/* Ticking numbers */}
+        <div className="flex items-baseline gap-6 mb-5">
+          <div>
+            <p className="font-serif text-2xl tabular animate-tick" style={{ color: 'var(--ink)' }}>
+              {tickEvaluated}
+            </p>
+            <p className="text-[10px] uppercase" style={{ color: 'var(--stone)', letterSpacing: '0.08em' }}>evaluated</p>
+          </div>
+          <div>
+            <p className="font-serif text-2xl tabular animate-tick" style={{ color: 'var(--ink)' }}>
+              {formatBudget(tickBudget)}
+            </p>
+            <p className="text-[10px] uppercase" style={{ color: 'var(--stone)', letterSpacing: '0.08em' }}>remaining</p>
+          </div>
+        </div>
+
+        {/* Step checklist */}
+        <div className="space-y-2">
+          {steps.map((s, i) => (
+            <div key={i} className="flex items-center gap-2 text-xs" style={{ color: s.done ? 'var(--petrol)' : 'var(--stone)' }}>
+              <span style={{ width: '14px', textAlign: 'center' }}>{s.done ? '✓' : '○'}</span>
+              <span>{s.label}</span>
             </div>
-          </div>
-          <h3 className="text-base font-bold text-slate-800 mb-1">Optimizing CSR allocation</h3>
-          <p className="text-sm text-slate-500 mb-5">{proposalCount} proposals · {formatBudget(budget)} budget</p>
-          <div className="w-full max-w-xs space-y-2">
-            {STEP_LABELS.map((s, i) => {
-              const state = i < step ? 'done' : i === step ? 'active' : 'pending'
-              return (
-                <div key={s.key} className={`flex items-center gap-2.5 text-sm transition-all duration-300 ${
-                  state === 'done' ? 'text-emerald-600' : state === 'active' ? 'text-blue-600 font-medium' : 'text-slate-300'
-                }`}>
-                  {state === 'done' ? (
-                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path className="animate-check" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : state === 'active' ? (
-                    <div className="w-4 h-4 flex-shrink-0 border-2 border-blue-400 rounded-full border-t-transparent animate-spin" />
-                  ) : (
-                    <div className="w-4 h-4 flex-shrink-0 border-2 border-slate-200 rounded-full" />
-                  )}
-                  <span>{s.label}</span>
-                </div>
-              )
-            })}
-          </div>
+          ))}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="card p-5 sm:p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-        <div>
-          <h2 className="section-title">Run Allocation</h2>
-          <p className="section-subtitle mt-0.5">Optimize fund distribution across {proposalCount} proposals</p>
-        </div>
-        <button onClick={() => setShowConstraints(!showConstraints)} className="btn-ghost text-xs self-start">
-          {showConstraints ? 'Hide' : 'Configure'} constraints
-          <svg className={`w-3 h-3 ml-1 inline transition-transform duration-200 ${showConstraints ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+    <div className="p-5" style={{ background: 'var(--paper)', border: '1px solid var(--rule)' }}>
+      <div className="flex items-baseline justify-between mb-4">
+        <p className="section-label">Allocate Funds</p>
+        <button onClick={() => setShowConstraints(!showConstraints)} className="btn-ghost text-[10px]">
+          {showConstraints ? 'Hide' : 'Constraints'}
         </button>
       </div>
 
       {showConstraints && (
-        <div className="mb-5 p-4 bg-slate-50 rounded-xl space-y-3 animate-fade-in-up">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              { key: 'min_regions', label: 'Min regions', min: 1, max: 10 },
-              { key: 'min_sectors', label: 'Min sectors', min: 1, max: 10 },
-              { key: 'max_per_region_ratio', label: 'Max per region %', min: 10, max: 100, step: 5, isPercent: true },
-            ].map(c => (
-              <div key={c.key}>
-                <label className="label block mb-1">{c.label}</label>
-                <input type="number" min={c.min} max={c.max} step={c.step || 1}
-                  value={c.isPercent ? Math.round(constraints[c.key] * 100) : constraints[c.key]}
-                  onChange={e => setConstraints(prev => ({
-                    ...prev, [c.key]: c.isPercent ? parseInt(e.target.value) / 100 || 0.5 : parseInt(e.target.value) || 1
-                  }))} className="input input-sm" />
-              </div>
-            ))}
-          </div>
+        <div className="mb-4 p-3 space-y-3" style={{ background: 'var(--parchment)', border: '1px solid var(--rule)' }}>
+          {[
+            { key: 'min_regions', label: 'Min regions', min: 1, max: 10 },
+            { key: 'min_sectors', label: 'Min sectors', min: 1, max: 10 },
+            { key: 'max_per_region_ratio', label: 'Max per region %', min: 10, max: 100, step: 5, isPercent: true },
+          ].map(c => (
+            <div key={c.key}>
+              <label className="section-label block mb-1">{c.label}</label>
+              <input type="number" min={c.min} max={c.max} step={c.step || 1}
+                value={c.isPercent ? Math.round(constraints[c.key] * 100) : constraints[c.key]}
+                onChange={e => setConstraints(prev => ({
+                  ...prev, [c.key]: c.isPercent ? parseInt(e.target.value) / 100 || 0.5 : parseInt(e.target.value) || 1
+                }))} className="input" style={{ width: '80px' }} />
+            </div>
+          ))}
         </div>
       )}
 
-      <div className="space-y-2">
-        <button onClick={() => onAllocate('optimizer')} disabled={allocating || proposalCount === 0}
-          className="btn-primary w-full flex items-center justify-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          Run ILP Optimizer — {formatBudget(budget)}
+      <button onClick={() => onAllocate('optimizer')} disabled={allocating || proposalCount === 0}
+        className="btn-primary w-full">
+        Run Allocation — {formatBudget(budget)}
+      </button>
+
+      {onCompare && (
+        <button onClick={onCompare} disabled={allocating || proposalCount === 0}
+          className="btn-secondary w-full mt-2">
+          Compare: Optimizer vs Ranked
         </button>
-        {onCompare && (
-          <button onClick={onCompare} disabled={allocating || proposalCount === 0}
-            className="btn-secondary w-full flex items-center justify-center gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            Compare: Optimizer vs Ranked List
-          </button>
-        )}
-      </div>
+      )}
     </div>
   )
 }

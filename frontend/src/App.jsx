@@ -36,84 +36,57 @@ function Dashboard() {
 
   const authH = authHeaders(token)
 
-  // ── Fetch all proposals ──
-  const fetchProposals = useCallback(async () => {
-    setLoading(true); setError(null)
-    try {
-      const res = await fetch(`${API}/proposals`)
-      if (!res.ok) throw new Error(`Failed to fetch proposals`)
-      setProposals(await res.json())
-    } catch (err) { setError(err.message) } finally { setLoading(false) }
-  }, [])
-
-  // ── Load sample data (POST /proposals/load-samples) ──
   const loadSampleData = useCallback(async () => {
     setLoading(true); setError(null)
     try {
-      const res = await fetch(`${API}/proposals/load-samples?replace=true`, {
-        method: 'POST', headers: { ...authH },
-      })
-      if (!res.ok) throw new Error(`Failed to load sample data: ${await res.text()}`)
+      const res = await fetch(`${API}/proposals/load-samples?replace=true`, { method: 'POST', headers: { ...authH } })
+      if (!res.ok) throw new Error(`Failed to load: ${await res.text()}`)
       setProposals(await res.json()); setAllocationResult(null); setActiveView('proposals')
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [authH])
 
-  // ── CSV upload (multipart POST /proposals/upload-csv) ──
   const uploadCSV = useCallback(async (file) => {
     setLoading(true); setError(null)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      const res = await fetch(`${API}/proposals/upload-csv?replace=true`, {
-        method: 'POST', headers: { ...authH }, body: formData,
-      })
+      const fd = new FormData(); fd.append('file', file)
+      const res = await fetch(`${API}/proposals/upload-csv?replace=true`, { method: 'POST', headers: { ...authH }, body: fd })
       if (!res.ok) throw new Error(`Upload failed: ${await res.text()}`)
       setProposals(await res.json()); setAllocationResult(null); setActiveView('proposals')
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [authH])
 
-  // ── Run allocation (POST /allocate?total_budget=N&strategy=optimizer) ──
   const runAllocation = useCallback(async (strategy = 'optimizer') => {
     setAllocating(true); setError(null); setAllocationResult(null)
     try {
-      const res = await fetch(`${API}/allocate?total_budget=${budget}&strategy=${strategy}`, {
-        method: 'POST', headers: { ...authH },
-      })
+      const res = await fetch(`${API}/allocate?total_budget=${budget}&strategy=${strategy}`, { method: 'POST', headers: { ...authH } })
       if (!res.ok) throw new Error(`Allocation failed: ${await res.text()}`)
       const data = await res.json()
       setAllocationResult(data)
-      // Update proposals with funded/rejected status from allocation
       setProposals(prev => prev.map(p => {
-        const funded = data.funded.find(f => f.id === p.id)
-        if (funded) return { ...p, is_funded: true, allocated_amount: funded.allocated_amount }
-        const rejected = data.rejected.find(r => r.id === p.id)
-        if (rejected) return { ...p, is_funded: false, allocated_amount: 0 }
-        return p
-      }))
-      setActiveView('results')
-    } catch (err) { setError(err.message) } finally { setAllocating(false) }
-  }, [budget, authH])
-
-  // ── Compare strategies (POST /allocate/compare) ──
-  const runCompare = useCallback(async () => {
-    setAllocating(true); setError(null); setAllocationResult(null)
-    try {
-      const res = await fetch(`${API}/allocate/compare?total_budget=${budget}`, {
-        method: 'POST', headers: { ...authH },
-      })
-      if (!res.ok) throw new Error(`Compare failed: ${await res.text()}`)
-      const data = await res.json()
-      setAllocationResult(data.optimizer)
-      setProposals(prev => prev.map(p => {
-        const funded = data.optimizer.funded.find(f => f.id === p.id)
-        if (funded) return { ...p, is_funded: true, allocated_amount: funded.allocated_amount }
+        const f = data.funded.find(x => x.id === p.id)
+        if (f) return { ...p, is_funded: true, allocated_amount: f.allocated_amount }
         return { ...p, is_funded: false, allocated_amount: 0 }
       }))
       setActiveView('results')
     } catch (err) { setError(err.message) } finally { setAllocating(false) }
   }, [budget, authH])
 
-  // ── Reset all proposals ──
+  const runCompare = useCallback(async () => {
+    setAllocating(true); setError(null); setAllocationResult(null)
+    try {
+      const res = await fetch(`${API}/allocate/compare?total_budget=${budget}`, { method: 'POST', headers: { ...authH } })
+      if (!res.ok) throw new Error(`Compare failed: ${await res.text()}`)
+      const data = await res.json()
+      setAllocationResult(data.optimizer)
+      setProposals(prev => prev.map(p => {
+        const f = data.optimizer.funded.find(x => x.id === p.id)
+        if (f) return { ...p, is_funded: true, allocated_amount: f.allocated_amount }
+        return { ...p, is_funded: false, allocated_amount: 0 }
+      }))
+      setActiveView('results')
+    } catch (err) { setError(err.message) } finally { setAllocating(false) }
+  }, [budget, authH])
+
   const resetAll = useCallback(async () => {
     setLoading(true); setError(null)
     try {
@@ -123,56 +96,51 @@ function Dashboard() {
   }, [authH])
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col">
+    <div className="min-h-screen" style={{ background: 'var(--parchment)' }}>
       <Header budget={budget} setBudget={setBudget} activeView={activeView}
-        setActiveView={setActiveView} hasResults={!!allocationResult}
-        hasProposals={proposals.length > 0} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        setActiveView={setActiveView} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      <div className="flex flex-1">
+      <div className="flex">
         <Sidebar activeView={activeView} setActiveView={setActiveView}
           collapsed={!sidebarOpen} setCollapsed={setSidebarOpen} />
 
-        <main className="flex-1 w-full min-w-0">
-          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 lg:py-8">
+        <main className="flex-1 min-w-0">
+          <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
             {error && (
-              <div className="mb-5 p-3.5 sm:p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-2 animate-fade-in-up">
-                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="min-w-0">{error}</span>
-                <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-600 flex-shrink-0 transition-colors">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+              <div className="mb-5 p-3 text-xs" style={{ background: 'rgba(178,59,59,0.06)', border: '1px solid rgba(178,59,59,0.2)', color: 'var(--brick)' }}>
+                {error}
+                <button onClick={() => setError(null)} className="ml-2 underline">dismiss</button>
               </div>
             )}
 
-            {/* ── PROPOSALS ── */}
+            {/* PROPOSALS */}
             {activeView === 'proposals' && (
-              <div className="space-y-5 sm:space-y-6">
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-5 sm:p-6 text-white shadow-lg animate-fade-in-up">
-                  <h2 className="text-lg sm:text-xl font-bold">
-                    Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {user?.user || 'CSR Manager'} 👋
-                  </h2>
-                  <p className="text-blue-100 text-sm mt-1 max-w-xl">Upload NGO proposals, score them, and run the ILP optimizer to find the best allocation.</p>
+              <div className="space-y-6">
+                {/* Welcome */}
+                <div>
+                  <h1 className="font-serif text-xl" style={{ color: 'var(--ink)' }}>
+                    Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {user?.user || 'CSR Manager'}
+                  </h1>
+                  <p className="text-xs mt-1" style={{ color: 'var(--stone)' }}>
+                    Load NGO proposals and run the optimizer to allocate your CSR budget.
+                  </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                <hr className="rule" />
+
+                {/* Actions */}
+                <div className="flex flex-wrap items-center gap-3">
                   <CSVUpload onUpload={uploadCSV} disabled={loading} />
-                  <button onClick={loadSampleData} disabled={loading}
-                    className="btn-primary !bg-emerald-600 !from-emerald-600 !to-emerald-600 hover:!from-emerald-700 hover:!to-emerald-700">
+                  <button onClick={loadSampleData} disabled={loading} className="btn-primary">
                     {loading ? 'Loading…' : 'Load Sample Data'}
                   </button>
-                  {proposals.length > 0 && (
-                    <button onClick={resetAll} className="btn-secondary">Clear All</button>
-                  )}
+                  {proposals.length > 0 && <button onClick={resetAll} className="btn-secondary">Clear</button>}
                 </div>
 
                 {proposals.length > 0 ? (
-                  <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-5 sm:gap-6 items-start">
+                  <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-6 items-start">
                     <ProposalList proposals={proposals} loading={loading} onLoadSample={loadSampleData} />
-                    <div className="xl:sticky xl:top-20">
+                    <div className="xl:sticky xl:top-16">
                       <AllocationPanel budget={budget} constraints={constraints} setConstraints={setConstraints}
                         onAllocate={runAllocation} onCompare={runCompare} allocating={allocating}
                         proposalCount={proposals.length} />
@@ -184,15 +152,11 @@ function Dashboard() {
               </div>
             )}
 
-            {/* ── RESULTS ── */}
+            {/* RESULTS */}
             {activeView === 'results' && (
-              <div className="space-y-5 sm:space-y-6">
-                <button onClick={() => setActiveView('proposals')}
-                  className="flex items-center gap-2 text-slate-500 hover:text-slate-700 font-medium text-sm transition-colors">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Back to Proposals
+              <div className="space-y-6">
+                <button onClick={() => setActiveView('proposals')} className="text-xs" style={{ color: 'var(--stone)' }}>
+                  ← Back to proposals
                 </button>
                 {allocationResult && (
                   <>
@@ -203,13 +167,13 @@ function Dashboard() {
               </div>
             )}
 
-            {/* ── COMPLIANCE ── */}
+            {/* COMPLIANCE */}
             {activeView === 'compliance' && <ComplianceDashboard budget={budget} />}
 
-            {/* ── PROJECT TRACKER ── */}
+            {/* PROJECTS */}
             {activeView === 'projects' && <ProjectTracker />}
 
-            {/* ── CSR-2 ── */}
+            {/* CSR-2 */}
             {activeView === 'csr2' && <CSR2Form />}
           </div>
         </main>
