@@ -33,7 +33,9 @@ function AppShell() {
 function Dashboard() {
   const { user, token } = useAuth()
   const [proposals, setProposals] = useState([])
-  const [budget, setBudget] = useState(500000)
+  // start from this account's default CSR budget (varies per login)
+  const [budget, setBudget] = useState(() => user?.default_budget || 5000000)
+  const [budgetTouched, setBudgetTouched] = useState(false)
   const [allocationResult, setAllocationResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [allocating, setAllocating] = useState(false)
@@ -46,6 +48,13 @@ function Dashboard() {
   const [apiUp, setApiUp] = useState(true)
 
   const authH = authHeaders(token)
+
+  // adopt this account's default budget until the user edits it themselves
+  useEffect(() => {
+    if (!budgetTouched && user?.default_budget) setBudget(user.default_budget)
+  }, [user?.default_budget, budgetTouched])
+
+  const changeBudget = useCallback((v) => { setBudgetTouched(true); setBudget(v) }, [])
 
   useEffect(() => {
     let alive = true
@@ -76,10 +85,11 @@ function Dashboard() {
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [authH])
 
-  const runAllocation = useCallback(async (strategy = 'optimizer') => {
+  const runAllocation = useCallback(async (strategy = 'optimizer', regionCap = null) => {
     setAllocating(true); setError(null); setAllocationResult(null)
     try {
-      const res = await fetch(`${API}/allocate?total_budget=${budget}&strategy=${strategy}`, { method: 'POST', headers: { ...authH } })
+      const capQ = regionCap ? `&max_per_region_ratio=${regionCap}` : ''
+      const res = await fetch(`${API}/allocate?total_budget=${budget}&strategy=${strategy}${capQ}`, { method: 'POST', headers: { ...authH } })
       if (!res.ok) throw new Error(`Allocation failed: ${await res.text()}`)
       const data = await res.json()
       setAllocationResult(data)
@@ -118,7 +128,7 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--parchment)' }}>
-      <Header budget={budget} setBudget={setBudget} activeView={activeView} apiUp={apiUp}
+      <Header budget={budget} setBudget={changeBudget} activeView={activeView} apiUp={apiUp}
         setActiveView={setActiveView} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <div className="flex">

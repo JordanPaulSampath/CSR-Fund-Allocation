@@ -26,18 +26,24 @@ def _auth(u="csr_manager", p="saarthi2026") -> dict:
     return {"Authorization": f"Bearer {r.json()['access_token']}"}
 
 
-@pytest.mark.parametrize("user,pw,role", [
-    ("csr_manager", "saarthi2026", "CSR Manager"),
-    ("demo", "demo12345", "CSR Manager"),
-    ("cfo", "finance2026", "Finance Head"),
-    ("program_officer", "program2026", "Program Officer"),
-    ("auditor", "auditor2026", "Compliance Auditor"),
-    ("board", "board2026", "Board Member"),
+@pytest.mark.parametrize("user,pw,role,budget", [
+    ("csr_manager", "saarthi2026", "CSR Manager", 5_000_000),
+    ("demo", "demo12345", "CSR Manager", 2_500_000),
+    ("analyst", "analyst2026", "CSR Analyst", 1_000_000),
+    ("program_officer", "program2026", "Program Officer", 3_500_000),
+    ("cfo", "finance2026", "Finance Head", 25_000_000),
+    ("auditor", "auditor2026", "Compliance Auditor", 5_000_000),
+    ("board", "board2026", "Board Member", 50_000_000),
+    ("regional_lead", "region2026", "Regional Lead", 7_500_000),
+    ("foundation_head", "foundation26", "Foundation Head", 100_000_000),
+    ("enterprise", "enterprise26", "Group CSR Head", 500_000_000),
 ])
-def test_all_seeded_logins_work(user, pw, role):
+def test_all_seeded_logins_work(user, pw, role, budget):
     r = client.post("/auth/login", json={"username": user, "password": pw})
     assert r.status_code == 200
-    assert r.json()["role"] == role
+    body = r.json()
+    assert body["role"] == role
+    assert body["default_budget"] == budget
 
 
 def test_district_saturation_shape():

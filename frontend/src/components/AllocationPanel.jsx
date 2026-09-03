@@ -5,6 +5,7 @@ export default function AllocationPanel({ budget, constraints, setConstraints, o
   const [tickEvaluated, setTickEvaluated] = useState(0)
   const [tickBudget, setTickBudget] = useState(budget)
   const [showConstraints, setShowConstraints] = useState(false)
+  const [equityOn, setEquityOn] = useState(false)
 
   const formatBudget = (v) => {
     if (v >= 10000000) return `₹${(v / 10000000).toFixed(1)} Cr`
@@ -83,27 +84,30 @@ export default function AllocationPanel({ budget, constraints, setConstraints, o
       </div>
 
       {showConstraints && (
-        <div className="mb-4 p-3 space-y-3 animate-scale-in" style={{ background: 'var(--parchment)', border: '1px solid var(--rule)' }}>
-          {[
-            { key: 'min_regions', label: 'Min regions', min: 1, max: 10 },
-            { key: 'min_sectors', label: 'Min sectors', min: 1, max: 10 },
-            { key: 'max_per_region_ratio', label: 'Max per region %', min: 10, max: 100, step: 5, isPercent: true },
-          ].map(c => (
-            <div key={c.key}>
-              <label className="section-label block mb-1">{c.label}</label>
-              <input type="number" min={c.min} max={c.max} step={c.step || 1}
-                value={c.isPercent ? Math.round(constraints[c.key] * 100) : constraints[c.key]}
-                onChange={e => setConstraints(prev => ({
-                  ...prev, [c.key]: c.isPercent ? parseInt(e.target.value) / 100 || 0.5 : parseInt(e.target.value) || 1
-                }))} className="input" style={{ width: '80px' }} />
-            </div>
-          ))}
+        <div className="mb-4 p-3 space-y-3 animate-scale-in" style={{ background: 'var(--parchment)', border: '1px solid var(--rule)', borderRadius: 8 }}>
+          <label className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'var(--ink)' }}>
+            <input type="checkbox" checked={equityOn} onChange={e => setEquityOn(e.target.checked)} />
+            Apply equity cap
+          </label>
+          <div style={{ opacity: equityOn ? 1 : 0.4 }}>
+            <label className="section-label block mb-1">Max per region — {Math.round(constraints.max_per_region_ratio * 100)}% of budget</label>
+            <input type="range" min="15" max="80" step="5" disabled={!equityOn}
+              value={Math.round(constraints.max_per_region_ratio * 100)}
+              onChange={e => setConstraints(prev => ({ ...prev, max_per_region_ratio: parseInt(e.target.value) / 100 }))}
+              className="w-full" />
+            <p className="text-[10px]" style={{ color: 'var(--stone)' }}>
+              No single state may absorb more than this share — forces geographic spread.
+            </p>
+          </div>
         </div>
       )}
 
-      <button onClick={() => onAllocate('optimizer')} disabled={allocating || proposalCount === 0}
+      <button
+        onClick={() => onAllocate('optimizer', equityOn ? constraints.max_per_region_ratio : null)}
+        disabled={allocating || proposalCount === 0}
         className="btn-primary w-full">
         Run Allocation — {formatBudget(budget)}
+        {equityOn && <span className="ml-1 opacity-80">· equity</span>}
       </button>
 
       {onCompare && (

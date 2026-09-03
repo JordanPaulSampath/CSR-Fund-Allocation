@@ -49,6 +49,7 @@ export function AuthProvider({ children }) {
         email: data.email,
         company_name: data.company_name,
         role: data.role,
+        default_budget: data.default_budget,
       })
       setToken(data.access_token)
       return data
@@ -75,6 +76,7 @@ export function AuthProvider({ children }) {
         email: data.email,
         company_name: data.company_name,
         role: data.role,
+        default_budget: data.default_budget,
       })
       setToken(data.access_token)
       return data

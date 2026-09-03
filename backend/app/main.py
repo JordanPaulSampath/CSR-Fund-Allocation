@@ -128,6 +128,7 @@ def signup(payload: SignupIn):
         company_name=user["company_name"],
         email=user["email"],
         role=user["role"],
+        default_budget=user.get("default_budget", 5_000_000),
     )
 
 
@@ -145,6 +146,7 @@ def login(payload: LoginIn):
         company_name=user["company_name"],
         email=user["email"],
         role=user["role"],
+        default_budget=user.get("default_budget", 5_000_000),
     )
 
 
@@ -158,6 +160,7 @@ def me(user: dict = RequireUser):
         "email": user["email"],
         "company_name": user["company_name"],
         "role": user["role"],
+        "default_budget": user.get("default_budget", 5_000_000),
     }
 
 
@@ -282,12 +285,14 @@ def recompute_scores(user: dict = RequireUser):
 # --------------------------------------------------------------------------- #
 # allocation
 # --------------------------------------------------------------------------- #
-def _run_allocation(total_budget: float, strategy: str) -> dict:
+def _run_allocation(total_budget: float, strategy: str,
+                    max_per_region_ratio: float | None = None) -> dict:
     global _last_allocation
     if len(store) == 0:
         raise HTTPException(400, "No proposals loaded. POST /proposals/load-samples first.")
     proposals = store.all()
-    result = allocate_budget(proposals, total_budget, strategy=strategy)
+    result = allocate_budget(proposals, total_budget, strategy=strategy,
+                             max_per_region_ratio=max_per_region_ratio)
     funded_ids = {p["id"] for p in result["funded"]}
     for p in proposals:
         p.is_funded = p.id in funded_ids
@@ -302,8 +307,12 @@ def _run_allocation(total_budget: float, strategy: str) -> dict:
 def allocate(
     total_budget: float = Query(..., description="Fixed CSR budget in ₹"),
     strategy: str = Query("optimizer", pattern="^(optimizer|ranked|greedy)$"),
+    max_per_region_ratio: Optional[float] = Query(
+        None, gt=0, lt=1,
+        description="Equity cap: max share of the budget any one region can take (e.g. 0.35)",
+    ),
 ):
-    return _run_allocation(total_budget, strategy)
+    return _run_allocation(total_budget, strategy, max_per_region_ratio)
 
 
 @app.get("/allocate/last", response_model=AllocationResult, tags=["allocation"])

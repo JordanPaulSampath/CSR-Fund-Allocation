@@ -103,7 +103,8 @@ def _ranked_fill(rows: List[Dict[str, Any]], total_budget: float) -> set:
     return chosen
 
 
-def _ilp(rows: List[Dict[str, Any]], total_budget: float) -> tuple[set, str]:
+def _ilp(rows: List[Dict[str, Any]], total_budget: float,
+         max_per_region_ratio: float | None = None) -> tuple[set, str]:
     try:
         from pulp import (LpBinary, LpMaximize, LpProblem, LpVariable,
                           PULP_CBC_CMD, lpSum, value)
@@ -122,6 +123,16 @@ def _ilp(rows: List[Dict[str, Any]], total_budget: float) -> tuple[set, str]:
         )
         prob += lpSum(x[r["_key"]] * r["requested_amount"] for r in rows) <= total_budget
 
+        # equity: no single region may absorb more than `ratio` of the budget
+        if max_per_region_ratio is not None and 0 < max_per_region_ratio < 1:
+            region_cap = max_per_region_ratio * total_budget
+            regions = {str(r.get("region") or "?") for r in rows}
+            for region in regions:
+                members = [r for r in rows if str(r.get("region") or "?") == region]
+                if sum(m["requested_amount"] for m in members) > region_cap:
+                    prob += lpSum(x[m["_key"]] * m["requested_amount"]
+                                  for m in members) <= region_cap
+
         status = prob.solve(PULP_CBC_CMD(msg=False))
         chosen = {k for k, var in x.items() if var.value() and value(var) >= 0.5}
         if not chosen and total_budget > 0 and any(
@@ -138,6 +149,7 @@ def allocate_budget(
     proposals: Sequence[Any],
     total_budget: float,
     strategy: str = "optimizer",
+    max_per_region_ratio: float | None = None,
 ) -> Dict[str, Any]:
     total_budget = max(float(total_budget or 0), 0.0)
     rows = _as_rows(proposals)
@@ -158,7 +170,11 @@ def allocate_budget(
         chosen, solver = _greedy_knapsack(rows, total_budget), "greedy-knapsack"
     else:
         strategy = "optimizer"
-        chosen, solver = _ilp(rows, total_budget)
+        chosen, solver = _ilp(rows, total_budget, max_per_region_ratio)
+        if max_per_region_ratio is not None and 0 < max_per_region_ratio < 1:
+            notes = notes + [
+                f"Equity cap on: no region above {max_per_region_ratio:.0%} of budget."
+            ]
 
     result = _package(strategy, solver, rows, chosen, total_budget, notes)
     for r in result["funded"] + result["rejected"]:

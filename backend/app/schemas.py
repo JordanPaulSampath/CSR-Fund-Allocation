@@ -19,6 +19,7 @@ class TokenOut(BaseModel):
     company_name: str = ""
     email: str = ""
     role: str = "CSR Manager"
+    default_budget: float = 5_000_000
 
 
 class ProposalIn(BaseModel):
