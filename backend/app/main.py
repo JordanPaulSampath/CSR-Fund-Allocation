@@ -7,11 +7,18 @@ Run:
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import List, Optional
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+
+# Built single-page app (produced by ``npm run build`` in ../frontend).
+# When present, this same server serves the UI *and* the API on one port.
+FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
 from . import __version__
 from . import partners as partners_mod
@@ -80,13 +87,14 @@ class SignupIn(BaseModel):
 # --------------------------------------------------------------------------- #
 # meta
 # --------------------------------------------------------------------------- #
-@app.get("/", tags=["meta"])
-def root():
+@app.get("/api", tags=["meta"])
+def api_root():
     return {
         "name": "CSR Helper API",
         "version": __version__,
         "docs": "/docs",
         "proposals_loaded": len(store),
+        "ui_bundled": FRONTEND_DIST.exists(),
     }
 
 
@@ -381,3 +389,31 @@ def stats():
 # Run once at import so the app is demo-ready even without the lifespan hook
 # (e.g. a plain ``TestClient(app)`` used outside a ``with`` block).
 _bootstrap()
+
+
+# --------------------------------------------------------------------------- #
+# Serve the built frontend from this same process (one port for everything).
+# Registered LAST so every API route above still wins; unknown paths fall
+# through to the SPA's index.html.
+# --------------------------------------------------------------------------- #
+if FRONTEND_DIST.exists():
+    _index = FRONTEND_DIST / "index.html"
+
+    @app.get("/", include_in_schema=False)
+    def _spa_index():
+        return FileResponse(_index)
+
+    app.mount(
+        "/",
+        StaticFiles(directory=str(FRONTEND_DIST), html=True),
+        name="spa",
+    )
+else:
+    @app.get("/", tags=["meta"])
+    def root():
+        return {
+            "name": "CSR Helper API",
+            "version": __version__,
+            "docs": "/docs",
+            "hint": "Run `npm run build` in ../frontend to serve the UI from here too.",
+        }

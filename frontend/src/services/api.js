@@ -1,7 +1,8 @@
 // Stateless API plumbing shared by the Pillar 5 / Pillar 6 components.
 // Kept out of context/ on purpose — this is transport, not app state.
 
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+// Same-origin by default (dev proxy + prod bundle both route to FastAPI).
+const BASE = import.meta.env.VITE_API_URL ?? ''
 
 function authHeaders() {
   try {

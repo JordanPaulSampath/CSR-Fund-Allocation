@@ -1,6 +1,11 @@
 import { useAuth } from '../context/AuthContext'
 
-export default function Header({ budget, setBudget, activeView, setActiveView, sidebarOpen, setSidebarOpen }) {
+const VIEW_LABELS = {
+  proposals: 'Proposals', results: 'Settlement', partners: 'Partner Match',
+  compliance: 'Compliance', csr2: 'CSR-2 Filing', projects: 'Project Tracker',
+}
+
+export default function Header({ budget, setBudget, activeView, apiUp = true, setActiveView, sidebarOpen, setSidebarOpen }) {
   const { user, logout } = useAuth()
 
   return (
@@ -17,6 +22,15 @@ export default function Header({ budget, setBudget, activeView, setActiveView, s
               </svg>
             </button>
             <span className="font-serif text-base font-normal" style={{ color: 'var(--ink)' }}>CSR Helper</span>
+            {VIEW_LABELS[activeView] && (
+              <>
+                <span className="hidden sm:inline text-xs" style={{ color: 'var(--rule)' }}>/</span>
+                <span className="hidden sm:inline section-label">{VIEW_LABELS[activeView]}</span>
+              </>
+            )}
+            <span className="flex items-center gap-1.5 ml-1" title={apiUp ? 'API connected' : 'API unreachable'}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: apiUp ? 'var(--petrol)' : 'var(--brick)' }} />
+            </span>
           </div>
 
           {/* Center: Budget — the hero number */}

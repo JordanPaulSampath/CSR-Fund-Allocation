@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { AuthProvider, useAuth, authHeaders } from './context/AuthContext'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
@@ -7,6 +7,7 @@ import CSVUpload from './components/CSVUpload'
 import AllocationPanel from './components/AllocationPanel'
 import ResultsView from './components/ResultsView'
 import SectorChart from './components/SectorChart'
+import SummaryStats from './components/SummaryStats'
 import ComplianceDashboard from './components/ComplianceDashboard'
 import ProjectTracker from './components/ProjectTracker'
 import CSR2Form from './components/CSR2Form'
@@ -14,7 +15,9 @@ import PartnerMatch from './components/PartnerMatch'
 import BudgetAdvisor from './components/BudgetAdvisor'
 import LoginPage from './components/LoginPage'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+// Same-origin by default: dev proxies these paths to :8000 (see vite.config.js),
+// production serves them from the same FastAPI process that serves this bundle.
+const API = import.meta.env.VITE_API_URL ?? ''
 
 function AppShell() {
   const { isAuthenticated } = useAuth()
@@ -35,8 +38,19 @@ function Dashboard() {
   const [constraints, setConstraints] = useState({
     min_regions: 2, min_sectors: 2, max_per_region_ratio: 0.5,
   })
+  const [apiUp, setApiUp] = useState(true)
 
   const authH = authHeaders(token)
+
+  useEffect(() => {
+    let alive = true
+    const ping = () => fetch(`${API}/health`)
+      .then((r) => alive && setApiUp(r.ok))
+      .catch(() => alive && setApiUp(false))
+    ping()
+    const id = setInterval(ping, 15000)
+    return () => { alive = false; clearInterval(id) }
+  }, [])
 
   const loadSampleData = useCallback(async () => {
     setLoading(true); setError(null)
@@ -99,7 +113,7 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--parchment)' }}>
-      <Header budget={budget} setBudget={setBudget} activeView={activeView}
+      <Header budget={budget} setBudget={setBudget} activeView={activeView} apiUp={apiUp}
         setActiveView={setActiveView} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <div className="flex">
@@ -108,6 +122,11 @@ function Dashboard() {
 
         <main className="flex-1 min-w-0">
           <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            {!apiUp && (
+              <div className="mb-5 p-3 text-xs" style={{ background: 'rgba(156,107,48,0.08)', border: '1px solid rgba(156,107,48,0.3)', color: 'var(--brass)' }}>
+                Can't reach the API. Make sure the backend is running — <span className="font-mono">python run.py</span> starts both.
+              </div>
+            )}
             {error && (
               <div className="mb-5 p-3 text-xs" style={{ background: 'rgba(178,59,59,0.06)', border: '1px solid rgba(178,59,59,0.2)', color: 'var(--brick)' }}>
                 {error}
@@ -138,6 +157,8 @@ function Dashboard() {
                   </button>
                   {proposals.length > 0 && <button onClick={resetAll} className="btn-secondary">Clear</button>}
                 </div>
+
+                {proposals.length > 0 && <SummaryStats proposals={proposals} budget={budget} />}
 
                 {proposals.length > 0 ? (
                   <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-6 items-start">

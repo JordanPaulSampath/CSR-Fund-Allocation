@@ -17,6 +17,12 @@ export default function LoginPage() {
     } catch {}
   }
 
+  const demoLogin = async () => {
+    clearError()
+    setForm(f => ({ ...f, username: 'csr_manager', password: 'saarthi2026' }))
+    try { await login('csr_manager', 'saarthi2026') } catch {}
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--parchment)' }}>
       <div className="w-full max-w-sm">
@@ -106,9 +112,15 @@ export default function LoginPage() {
           </form>
 
           {mode === 'login' && (
-            <div className="mt-5 pt-4 text-center" style={{ borderTop: '1px solid var(--rule)' }}>
-              <p className="text-xs" style={{ color: 'var(--stone)' }}>
-                Demo credentials: <span style={{ color: 'var(--ink)' }}>csr_manager</span> / <span style={{ color: 'var(--ink)' }}>saarthi2026</span>
+            <div className="mt-5 pt-4" style={{ borderTop: '1px solid var(--rule)' }}>
+              <button type="button" onClick={demoLogin} disabled={loading}
+                className="btn-secondary w-full">
+                Continue as demo
+              </button>
+              <p className="text-xs mt-3 text-center" style={{ color: 'var(--stone)' }}>
+                <span style={{ color: 'var(--ink)' }}>csr_manager</span> / <span style={{ color: 'var(--ink)' }}>saarthi2026</span>
+                <span className="mx-1.5">·</span>
+                <span style={{ color: 'var(--ink)' }}>demo</span> / <span style={{ color: 'var(--ink)' }}>demo12345</span>
               </p>
             </div>
           )}
