@@ -63,11 +63,14 @@ app/
   schemas.py       Pydantic request/response models (the frontend contract)
   scoring.py       score_proposal() — weighted, explainable, 0..10
   optimizer.py     allocate_budget() — PuLP ILP + greedy fallback + ranked baseline
+  partners.py      Pillar 5 — implementing-partner capability profiles + fit-score match
+  budget_advisor.py Pillar 6 — leftover-funds recommendation (next-best / partial / rollover)
   auth.py          signed expiring bearer token, one demo user
   config.py        loads/saves data/scoring_weights.yaml (live re-weighting)
   data_loader.py   CSV -> store
 data/
   scoring_weights.yaml        Non-Tech #2 owns this
+  ngo_partners.csv            implementing-partner directory + capability profiles
   generate_synthetic_data.py  run once -> sample_proposals.csv
 tests/
 frontend-example/  copy-paste api.js + ResultsView.jsx for Dev B
@@ -92,6 +95,25 @@ hands you the sentence to say.
 If the solver is ever unavailable, allocation silently falls back to a greedy
 knapsack — the demo never dies. The `solver` field in the response says which
 ran.
+
+## Pillar 5 — right implementing partner (`/proposals/{id}/match`)
+
+A high score doesn't mean the submitting NGO can deliver at scale. Each proposal
+is reduced to a need-vector (sector, region, beneficiary scale) and matched
+against the partner directory in `data/ngo_partners.csv`:
+
+`fit = 0.35·sector_match + 0.25·region_presence + 0.20·capacity_headroom + 0.20·track_record`
+
+The shortlist is advisory — a partner with no completed cycles gets a neutral
+0.5 track record and a "new partner, unscored" badge; partners too small for the
+ask are flagged `co_implementation_suggested`.
+
+## Pillar 6 — remaining-budget advisor (`/allocate/remaining`)
+
+An ILP rarely spends to the last rupee. After a run, `leftover = budget − spent`
+feeds a three-branch decision: fund the next-best fit that fully fits, offer a
+partial grant (≥70% coverage) on a near-miss, or flag a priority roll-over —
+always one of the three, always recorded, never silently absorbed.
 
 ## Config (env vars, all optional)
 

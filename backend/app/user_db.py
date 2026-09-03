@@ -47,6 +47,31 @@ def init_db():
         conn.close()
 
 
+def seed_demo_user() -> None:
+    """Ensure the demo CSR Manager login always exists.
+
+    The frontend login page and every smoke test authenticate as this user, so
+    the app has to be usable straight after a clean checkout with no signup step.
+    Credentials come from config (``SAARTHI_USER`` / ``SAARTHI_PASSWORD``).
+    """
+    from .config import DEMO_PASSWORD, DEMO_USERNAME
+
+    init_db()
+    if get_user_by_username(DEMO_USERNAME):
+        return
+    try:
+        create_user(
+            username=DEMO_USERNAME,
+            email=f"{DEMO_USERNAME}@saarthi.demo",
+            password=DEMO_PASSWORD,
+            company_name="Saarthi Demo Corp",
+            role="CSR Manager",
+        )
+    except ValueError:
+        # created concurrently by another worker — fine
+        pass
+
+
 def create_user(username: str, email: str, password: str, company_name: str = "", role: str = "CSR Manager") -> dict:
     """Create a new user. Returns user dict or raises ValueError."""
     password_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")

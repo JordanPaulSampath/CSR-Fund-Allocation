@@ -86,6 +86,60 @@ final_score, score_breakdown{}, allocated_amount, is_funded`.
 `compare` response: `{optimizer: AllocationResult, ranked: AllocationResult,
 score_gain, beneficiary_gain, budget_better_used, headline}`.
 
+## Implementing partners — Pillar 5 (right-partner matching)
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/partners?sector=&region=` | implementing-partner directory with capability profiles |
+| POST | `/proposals/{id}/match?top_n=3` | ranked partner shortlist for one proposal |
+
+Partner profiles are loaded from `data/ngo_partners.csv` (`sectors` / `regions`
+are `;`-separated). `PartnerOut`: `{id, name, sectors[], regions[],
+avg_project_scale, track_record, cycles_completed, contact, registration_no}`.
+
+Fit score (0–1):
+`0.35·sector_match + 0.25·region_presence + 0.20·capacity_headroom + 0.20·track_record`.
+`capacity_headroom = min(1, avg_project_scale / beneficiaries)`. A partner with
+`cycles_completed = 0` gets a neutral `track_record` of 0.5 and a
+`"new partner, unscored"` badge. `co_implementation_suggested = true` when the
+partner's average project scale is under half the proposal's beneficiary count.
+Advisory only — never an automatic reassignment.
+
+`PartnerMatchResult`:
+```json
+{
+  "proposal_id": 12, "proposal_title": "...", "proposal_sector": "education",
+  "proposal_region": "Maharashtra", "beneficiaries": 2000,
+  "weights": {"sector_match": 0.35, "region_presence": 0.25, "capacity_headroom": 0.20, "track_record": 0.20},
+  "shortlist": [
+    {
+      "partner_id": 1, "name": "Prayas Foundation", "fit": 0.98,
+      "components": {"sector_match": 1.0, "region_presence": 1.0, "capacity_headroom": 1.0, "track_record": 0.92},
+      "co_implementation_suggested": false, "unscored": false, "badge": null,
+      "avg_project_scale": 3200, "track_record": 0.92, "cycles_completed": 7,
+      "sectors": ["education", "women empowerment"], "regions": ["Maharashtra", "..."],
+      "contact": "partnerships@prayasfoundation.org",
+      "rationale": "works in education; active in Maharashtra; capacity covers the full ask; 92% on-time track record"
+    }
+  ],
+  "note": "Advisory only ..."
+}
+```
+
+## Remaining-budget advisor — Pillar 6
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/allocate/remaining` | leftover-funds recommendation for the most recent run; 404 before any allocation |
+
+Runs the three-branch decision on `total_budget − spent`:
+1. `next_best` — leftover fully covers the ask of the best impact-per-rupee unfunded proposal.
+2. `partial_fund` — leftover covers ≥ 70% of a near-miss proposal (`coverage` = fraction covered).
+3. `rollover` — nothing fits; flag for a priority boost next cycle.
+Also `fully_utilised` when there is no leftover. `BudgetSuggestion`:
+`{type, leftover, target_proposal_id, target_title, target_ngo, target_ask,
+coverage, rationale, strategy, total_budget, spent, candidates_considered}`.
+
 ## Dashboard helpers
 
 | Method | Path | Returns |

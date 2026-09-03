@@ -10,6 +10,8 @@ import SectorChart from './components/SectorChart'
 import ComplianceDashboard from './components/ComplianceDashboard'
 import ProjectTracker from './components/ProjectTracker'
 import CSR2Form from './components/CSR2Form'
+import PartnerMatch from './components/PartnerMatch'
+import BudgetAdvisor from './components/BudgetAdvisor'
 import LoginPage from './components/LoginPage'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -161,11 +163,15 @@ function Dashboard() {
                 {allocationResult && (
                   <>
                     <ResultsView result={allocationResult} proposals={proposals} budget={budget} />
+                    <BudgetAdvisor trigger={allocationResult} />
                     <SectorChart result={allocationResult} proposals={proposals} />
                   </>
                 )}
               </div>
             )}
+
+            {/* PARTNER MATCH */}
+            {activeView === 'partners' && <PartnerMatch proposals={proposals} />}
 
             {/* COMPLIANCE */}
             {activeView === 'compliance' && <ComplianceDashboard budget={budget} />}

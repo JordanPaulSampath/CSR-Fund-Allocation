@@ -4,6 +4,7 @@ const NAV_ITEMS = [
   { section: 'Allocation', items: [
     { id: 'proposals', label: 'Proposals' },
     { id: 'results', label: 'Settlement' },
+    { id: 'partners', label: 'Partner Match' },
   ]},
   { section: 'Compliance', items: [
     { id: 'compliance', label: 'Compliance' },

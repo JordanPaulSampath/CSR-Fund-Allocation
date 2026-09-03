@@ -107,3 +107,64 @@ class CompareResult(BaseModel):
     beneficiary_gain: int
     budget_better_used: float
     headline: str
+
+
+# --------------------------------------------------------------------------- #
+# Pillar 5 — implementing-partner matching
+# --------------------------------------------------------------------------- #
+class PartnerOut(BaseModel):
+    id: int
+    name: str
+    sectors: List[str]
+    regions: List[str]
+    avg_project_scale: int
+    track_record: float
+    cycles_completed: int
+    contact: str = ""
+    registration_no: str = ""
+
+
+class PartnerMatchCandidate(BaseModel):
+    partner_id: int
+    name: str
+    fit: float
+    components: Dict[str, float]
+    co_implementation_suggested: bool
+    unscored: bool
+    badge: Optional[str] = None
+    avg_project_scale: int
+    track_record: float
+    cycles_completed: int
+    sectors: List[str]
+    regions: List[str]
+    contact: str = ""
+    rationale: str
+
+
+class PartnerMatchResult(BaseModel):
+    proposal_id: Optional[int] = None
+    proposal_title: Optional[str] = None
+    proposal_sector: Optional[str] = None
+    proposal_region: Optional[str] = None
+    beneficiaries: int
+    weights: Dict[str, float]
+    shortlist: List[PartnerMatchCandidate]
+    note: str
+
+
+# --------------------------------------------------------------------------- #
+# Pillar 6 — remaining-budget advisor
+# --------------------------------------------------------------------------- #
+class BudgetSuggestion(BaseModel):
+    type: str
+    leftover: float
+    target_proposal_id: Optional[int] = None
+    target_title: Optional[str] = None
+    target_ngo: Optional[str] = None
+    target_ask: Optional[float] = None
+    coverage: Optional[float] = None
+    rationale: str
+    strategy: Optional[str] = None
+    total_budget: Optional[float] = None
+    spent: Optional[float] = None
+    candidates_considered: int = 0

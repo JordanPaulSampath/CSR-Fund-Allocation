@@ -6,6 +6,7 @@ Run:
 """
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from typing import List, Optional
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
@@ -13,20 +14,47 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from . import __version__
+from . import partners as partners_mod
 from .auth import RequireUser, create_token
+from .budget_advisor import recommend as recommend_budget
 from .config import DEFAULT_WEIGHTS, load_weights, save_weights
 from .data_loader import load_from_text, load_sample_dataset
 from .models import Proposal, store
 from .optimizer import allocate_budget, compare_strategies
-from .schemas import (AllocationResult, CompareResult, LoginIn, ProposalIn,
-                      ProposalOut, TokenOut, WeightsIn, WeightsOut)
+from .schemas import (AllocationResult, BudgetSuggestion, CompareResult, LoginIn,
+                      PartnerMatchResult, PartnerOut, ProposalIn, ProposalOut,
+                      TokenOut, WeightsIn, WeightsOut)
 from .scoring import score_proposal
-from .user_db import init_db, create_user, verify_user
+from .user_db import create_user, init_db, seed_demo_user, verify_user
+
+
+def _bootstrap() -> None:
+    """Idempotent startup work — safe to call at import and on lifespan start.
+
+    Runs at import time too so a bare ``TestClient(app)`` (no context manager)
+    still gets a seeded user DB and sample data.
+    """
+    init_db()
+    seed_demo_user()
+    partners_mod.store.load(force=True)
+    if len(store) == 0:
+        try:
+            load_sample_dataset(replace=True)
+        except FileNotFoundError:
+            pass
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    _bootstrap()
+    yield
+
 
 app = FastAPI(
     title="CSR Helper API",
     version=__version__,
     description="Score NGO proposals and optimally allocate a fixed CSR budget.",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -283,6 +311,43 @@ def allocate_compare(total_budget: float = Query(..., description="Fixed CSR bud
 
 
 # --------------------------------------------------------------------------- #
+# Pillar 5 — implementing partners & right-partner matching
+# --------------------------------------------------------------------------- #
+@app.get("/partners", response_model=List[PartnerOut], tags=["partners"])
+def list_partners(sector: Optional[str] = None, region: Optional[str] = None):
+    """Directory of implementing partners with their capability profiles."""
+    items = partners_mod.store.load()
+    if sector:
+        items = [p for p in items
+                 if sector.lower() in {s.lower() for s in p.sectors}]
+    if region:
+        items = [p for p in items
+                 if region.lower() in {r.lower() for r in p.regions}]
+    return [PartnerOut(**p.to_dict()) for p in items]
+
+
+@app.post("/proposals/{proposal_id}/match", response_model=PartnerMatchResult,
+          tags=["partners"])
+def match_proposal_partners(proposal_id: int, top_n: int = Query(3, ge=1, le=10)):
+    """Ranked implementing-partner shortlist for one proposal (Pillar 5)."""
+    p = store.get(proposal_id)
+    if not p:
+        raise HTTPException(404, f"Proposal {proposal_id} not found.")
+    return partners_mod.match_partners(p.to_dict(), top_n=top_n)
+
+
+# --------------------------------------------------------------------------- #
+# Pillar 6 — remaining-budget advisor
+# --------------------------------------------------------------------------- #
+@app.get("/allocate/remaining", response_model=BudgetSuggestion, tags=["allocation"])
+def allocate_remaining():
+    """Leftover-budget recommendation for the most recent allocation run."""
+    if _last_allocation is None:
+        raise HTTPException(404, "No allocation has been run yet.")
+    return recommend_budget(_last_allocation)
+
+
+# --------------------------------------------------------------------------- #
 # helpers
 # --------------------------------------------------------------------------- #
 @app.get("/meta/sectors", tags=["meta"])
@@ -313,12 +378,6 @@ def stats():
     }
 
 
-@app.on_event("startup")
-def _seed_on_startup():
-    """Init user DB + auto-load sample dataset on boot."""
-    init_db()
-    if len(store) == 0:
-        try:
-            load_sample_dataset(replace=True)
-        except FileNotFoundError:
-            pass
+# Run once at import so the app is demo-ready even without the lifespan hook
+# (e.g. a plain ``TestClient(app)`` used outside a ``with`` block).
+_bootstrap()
