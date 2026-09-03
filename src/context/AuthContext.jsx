@@ -41,8 +41,41 @@ export function AuthProvider({ children }) {
         throw new Error(body.detail || 'Invalid username or password')
       }
       const data = await res.json()
-      // Backend returns {access_token, expires_in, user: "csr_manager"}
-      setUser({ user: data.user })
+      // Backend returns {access_token, user, company_name, email, role}
+      setUser({
+        id: data.id,
+        user: data.user,
+        username: data.user,
+        email: data.email,
+        company_name: data.company_name,
+        role: data.role,
+      })
+      setToken(data.access_token)
+      return data
+    } catch (err) { setError(err.message); throw err } finally { setLoading(false) }
+  }, [])
+
+  const signup = useCallback(async ({ username, email, password, company_name }) => {
+    setLoading(true); setError(null)
+    try {
+      const res = await fetch(`${API_BASE}/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password, company_name }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.detail || 'Signup failed')
+      }
+      const data = await res.json()
+      setUser({
+        id: data.id,
+        user: data.user,
+        username: data.user,
+        email: data.email,
+        company_name: data.company_name,
+        role: data.role,
+      })
       setToken(data.access_token)
       return data
     } catch (err) { setError(err.message); throw err } finally { setLoading(false) }
@@ -59,7 +92,7 @@ export function AuthProvider({ children }) {
   const value = {
     user, token, loading, error,
     isAuthenticated: !!user && !!token,
-    login, logout, clearError,
+    login, signup, logout, clearError,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

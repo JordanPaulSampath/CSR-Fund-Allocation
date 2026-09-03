@@ -2,31 +2,55 @@ import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 
 export default function LoginPage() {
-  const { login, loading, error, clearError } = useAuth()
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+  const { login, signup, loading, error, clearError } = useAuth()
+  const [mode, setMode] = useState('login') // 'login' | 'signup'
+  const [form, setForm] = useState({
+    username: '', email: '', password: '', company_name: '',
+  })
   const [showPassword, setShowPassword] = useState(false)
+
+  const update = (field, value) => setForm(f => ({ ...f, [field]: value }))
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!username || !password) return
-    try { await login(username, password) } catch {}
+    try {
+      if (mode === 'login') {
+        await login(form.username, form.password)
+      } else {
+        await signup({
+          username: form.username,
+          email: form.email,
+          password: form.password,
+          company_name: form.company_name,
+        })
+      }
+    } catch {}
+  }
+
+  const switchMode = () => {
+    setMode(m => m === 'login' ? 'signup' : 'login')
+    clearError()
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-sm">
+        {/* Logo */}
         <div className="text-center mb-6 sm:mb-8 animate-fade-in-up">
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
             <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Welcome back</h1>
-          <p className="text-sm text-slate-400 mt-1">Sign in to CSR Helper</p>
-          <p className="text-xs text-slate-300 mt-2">Demo: csr_manager / saarthi2026</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800">
+            {mode === 'login' ? 'Welcome back' : 'Create your account'}
+          </h1>
+          <p className="text-sm text-slate-400 mt-1">
+            {mode === 'login' ? 'Sign in to CSR Helper' : 'Set up your company\'s CSR dashboard'}
+          </p>
         </div>
 
+        {/* Card */}
         <div className="card p-6 sm:p-8 animate-fade-in-up">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-center gap-2">
@@ -43,17 +67,38 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Username — always shown */}
             <div>
               <label className="block text-sm font-medium text-slate-600 mb-1.5">Username</label>
-              <input type="text" value={username} onChange={e => setUsername(e.target.value)}
+              <input type="text" value={form.username} onChange={e => update('username', e.target.value)}
                 placeholder="csr_manager" required className="input" autoComplete="username" />
             </div>
 
+            {/* Email + Company — signup only */}
+            {mode === 'signup' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1.5">Email</label>
+                  <input type="email" value={form.email} onChange={e => update('email', e.target.value)}
+                    placeholder="csr@company.com" required className="input" autoComplete="email" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1.5">Company Name</label>
+                  <input type="text" value={form.company_name} onChange={e => update('company_name', e.target.value)}
+                    placeholder="Acme Corp Pvt. Ltd." className="input" />
+                </div>
+              </>
+            )}
+
+            {/* Password — always shown */}
             <div>
               <label className="block text-sm font-medium text-slate-600 mb-1.5">Password</label>
               <div className="relative">
-                <input type={showPassword ? 'text' : 'password'} value={password}
-                  onChange={e => setPassword(e.target.value)} placeholder="••••••••" required className="input pr-10" autoComplete="current-password" />
+                <input type={showPassword ? 'text' : 'password'} value={form.password}
+                  onChange={e => update('password', e.target.value)}
+                  placeholder={mode === 'signup' ? 'Min 6 characters' : '••••••••'}
+                  required minLength={mode === 'signup' ? 6 : undefined}
+                  className="input pr-10" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
                   {showPassword ? (
@@ -70,15 +115,25 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <button type="submit" disabled={loading || !username || !password} className="btn-primary w-full">
+            <button type="submit" disabled={loading || !form.username || !form.password}
+              className="btn-primary w-full">
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Signing in…
+                  {mode === 'login' ? 'Signing in…' : 'Creating account…'}
                 </span>
-              ) : 'Sign In'}
+              ) : mode === 'login' ? 'Sign In' : 'Create Account'}
             </button>
           </form>
+
+          <div className="mt-5 text-center">
+            <p className="text-sm text-slate-400">
+              {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
+              <button onClick={switchMode} className="text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                {mode === 'login' ? 'Sign up' : 'Sign in'}
+              </button>
+            </p>
+          </div>
         </div>
       </div>
     </div>
