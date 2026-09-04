@@ -41,6 +41,9 @@ def _resolve_database_url() -> str:
         url = "postgresql://" + url[len("postgres://"):]
     if url.startswith("postgresql://"):
         url = "postgresql+psycopg2://" + url[len("postgresql://"):]
+    # Supabase requires TLS — make it explicit if the caller didn't.
+    if url.startswith("postgresql+psycopg2://") and "sslmode=" not in url:
+        url += ("&" if "?" in url else "?") + "sslmode=require"
     return url
 
 
