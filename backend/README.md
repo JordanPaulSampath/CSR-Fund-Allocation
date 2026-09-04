@@ -119,10 +119,17 @@ always one of the three, always recorded, never silently absorbed.
 
 | Var | Default | |
 |---|---|---|
+| `DATABASE_URL` | *(unset → SQLite `data/users.db`)* | Supabase/Postgres URI; `postgres://` and `postgresql://` are normalised automatically |
+| `CORS_ORIGINS` | `*` | comma-separated allowed browser origins; `*.vercel.app` previews allowed automatically once set |
+| `SAARTHI_SECRET` | demo string | **change in production** — signs login tokens |
+| `SAARTHI_SEED_DEMO` | `1` | set `0` to stop seeding the 10 demo logins |
 | `SAARTHI_AUTH_ENABLED` | `1` | set `0` to drop auth if the demo laptop misbehaves |
 | `SAARTHI_USER` / `SAARTHI_PASSWORD` | `csr_manager` / `saarthi2026` | |
 | `SAARTHI_WEIGHTS` | `data/scoring_weights.yaml` | |
 | `SAARTHI_SAMPLE_CSV` | `data/sample_proposals.csv` | |
+
+Deploying to Railway + Supabase: see **[../DEPLOY.md](../DEPLOY.md)**. `railway.json`,
+`Procfile`, `runtime.txt`, `Dockerfile` and `.env.example` are all in this folder.
 
 ## Out of scope (roadmap — name it, don't build it)
 

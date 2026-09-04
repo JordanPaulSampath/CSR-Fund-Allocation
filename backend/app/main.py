@@ -25,7 +25,8 @@ from . import ledger
 from . import partners as partners_mod
 from .auth import RequireUser, create_token
 from .budget_advisor import recommend as recommend_budget
-from .config import DATA_DIR, DEFAULT_WEIGHTS, load_weights, save_weights
+from .config import (CORS_ORIGINS, DATA_DIR, DEFAULT_WEIGHTS, load_weights,
+                     save_weights)
 from .data_loader import load_from_text, load_sample_dataset
 from .dataset_meta import DATASET_INFO
 from .models import Proposal, store
@@ -68,7 +69,8 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app" if CORS_ORIGINS != ["*"] else None,
     allow_methods=["*"],
     allow_headers=["*"],
 )

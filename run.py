@@ -47,6 +47,7 @@ def ensure_backend_deps() -> None:
         import fastapi  # noqa: F401
         import uvicorn  # noqa: F401
         import pulp  # noqa: F401
+        import sqlalchemy  # noqa: F401
         return
     except ImportError:
         pass

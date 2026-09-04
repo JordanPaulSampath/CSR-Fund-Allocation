@@ -16,8 +16,41 @@ import yaml
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
+
+# Load backend/.env for local dev if present (Railway/Vercel inject vars directly).
+try:  # optional dependency
+    from dotenv import load_dotenv
+
+    load_dotenv(BASE_DIR / ".env")
+except Exception:
+    pass
 WEIGHTS_PATH = Path(os.getenv("SAARTHI_WEIGHTS", DATA_DIR / "scoring_weights.yaml"))
 SAMPLE_CSV_PATH = Path(os.getenv("SAARTHI_SAMPLE_CSV", DATA_DIR / "sample_proposals.csv"))
+
+
+def _resolve_database_url() -> str:
+    """Postgres (Supabase / Railway) via ``DATABASE_URL``; local SQLite otherwise.
+
+    Accepts the ``postgres://`` scheme Supabase/Railway hand out and normalises it
+    to the ``postgresql+psycopg2://`` form SQLAlchemy expects.
+    """
+    url = os.getenv("DATABASE_URL", "").strip()
+    if not url:
+        return f"sqlite:///{(DATA_DIR / 'users.db').as_posix()}"
+    if url.startswith("postgres://"):
+        url = "postgresql://" + url[len("postgres://"):]
+    if url.startswith("postgresql://"):
+        url = "postgresql+psycopg2://" + url[len("postgresql://"):]
+    return url
+
+
+DATABASE_URL = _resolve_database_url()
+
+# Comma-separated list of allowed browser origins for CORS. "*" in dev; set the
+# Vercel URL(s) in production, e.g. CORS_ORIGINS="https://saarthi.vercel.app".
+CORS_ORIGINS = [
+    o.strip() for o in os.getenv("CORS_ORIGINS", "*").split(",") if o.strip()
+] or ["*"]
 
 # Demo auth — a single hardcoded CSR Manager login. Do NOT build real
 # multi-tenant auth for a hackathon (see the plan, section 3.1).

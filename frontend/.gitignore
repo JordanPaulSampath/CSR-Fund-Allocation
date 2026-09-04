@@ -3,3 +3,5 @@ dist/
 *.local
 .env
 .env.*
+!.env.example
+.vercel

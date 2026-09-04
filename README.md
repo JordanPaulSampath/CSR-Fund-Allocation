@@ -91,6 +91,14 @@ knapsack optimiser, the equity cap, why it's deterministic not trained, worked
 examples): **https://claude.ai/code/artifact/88981d1f-044f-430c-b88e-ed53f3be9ee1**
 (open it and Ctrl/Cmd-P → Save as PDF).
 
+## Deploying
+
+Frontend → **Vercel**, backend → **Railway**, database → **Supabase** (Postgres).
+Step-by-step in **[DEPLOY.md](DEPLOY.md)**. Config files are already in the repo:
+`frontend/vercel.json`, `backend/railway.json` + `Procfile` + `runtime.txt`, and
+`.env.example` on both sides. The backend auto-switches to Postgres when
+`DATABASE_URL` is set and creates its own tables on first boot.
+
 ## Manual run (two terminals)
 
 ```bash
