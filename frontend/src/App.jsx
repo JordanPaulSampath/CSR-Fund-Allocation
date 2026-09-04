@@ -75,16 +75,6 @@ function Dashboard() {
     } catch (err) { setError(err.message) } finally { setLoading(false) }
   }, [authH])
 
-  const uploadCSV = useCallback(async (file) => {
-    setLoading(true); setError(null)
-    try {
-      const fd = new FormData(); fd.append('file', file)
-      const res = await fetch(`${API}/proposals/upload-csv?replace=true`, { method: 'POST', headers: { ...authH }, body: fd })
-      if (!res.ok) throw new Error(`Upload failed: ${await res.text()}`)
-      setProposals(await res.json()); setAllocationResult(null); setActiveView('proposals')
-    } catch (err) { setError(err.message) } finally { setLoading(false) }
-  }, [authH])
-
   const runAllocation = useCallback(async (strategy = 'optimizer', regionCap = null) => {
     setAllocating(true); setError(null); setAllocationResult(null)
     try {
@@ -101,6 +91,20 @@ function Dashboard() {
       setActiveView('results')
     } catch (err) { setError(err.message) } finally { setAllocating(false) }
   }, [budget, authH])
+
+  const uploadCSV = useCallback(async (file) => {
+    setLoading(true); setError(null)
+    try {
+      const fd = new FormData(); fd.append('file', file)
+      const res = await fetch(`${API}/proposals/upload-csv?replace=true`, { method: 'POST', headers: { ...authH }, body: fd })
+      if (!res.ok) throw new Error(`Upload failed: ${await res.text()}`)
+      const rows = await res.json()
+      setProposals(rows); setAllocationResult(null)
+      // auto-run the optimiser on the freshly uploaded dataset
+      if (rows.length) await runAllocation('optimizer')
+      else setActiveView('proposals')
+    } catch (err) { setError(err.message); setActiveView('proposals') } finally { setLoading(false) }
+  }, [authH, runAllocation])
 
   const runCompare = useCallback(async () => {
     setAllocating(true); setError(null); setAllocationResult(null)
@@ -166,12 +170,16 @@ function Dashboard() {
 
                 {/* Actions */}
                 <div className="flex flex-wrap items-center gap-3">
-                  <CSVUpload onUpload={uploadCSV} disabled={loading} />
+                  <CSVUpload onUpload={uploadCSV} disabled={loading || allocating} />
                   <button onClick={loadSampleData} disabled={loading} className="btn-primary">
                     {loading ? 'Loading…' : 'Load Sample Data'}
                   </button>
                   {proposals.length > 0 && <button onClick={resetAll} className="btn-secondary">Clear</button>}
                 </div>
+                <p className="text-[11px] -mt-3" style={{ color: 'var(--stone)' }}>
+                  Uploading a CSV replaces the current set and runs the optimiser automatically.
+                  Columns: <span className="font-mono">ngo_name, title, sector, region, requested_amount, beneficiaries</span>.
+                </p>
 
                 {proposals.length > 0 && <SummaryStats proposals={proposals} budget={budget} />}
 

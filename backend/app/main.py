@@ -474,16 +474,23 @@ _bootstrap()
 # --------------------------------------------------------------------------- #
 if FRONTEND_DIST.exists():
     _index = FRONTEND_DIST / "index.html"
+    # never let a browser hold a stale index.html — it points at hashed JS/CSS,
+    # so a cached copy = a cached (old) app. The hashed assets themselves are
+    # safe to cache hard.
+    _NO_CACHE = {"Cache-Control": "no-cache, no-store, must-revalidate"}
 
     @app.get("/", include_in_schema=False)
     def _spa_index():
-        return FileResponse(_index)
+        return FileResponse(_index, headers=_NO_CACHE)
 
-    app.mount(
-        "/",
-        StaticFiles(directory=str(FRONTEND_DIST), html=True),
-        name="spa",
-    )
+    class _SPAStatic(StaticFiles):
+        async def get_response(self, path, scope):
+            resp = await super().get_response(path, scope)
+            if path == "index.html" or path.endswith("/index.html"):
+                resp.headers.update(_NO_CACHE)
+            return resp
+
+    app.mount("/", _SPAStatic(directory=str(FRONTEND_DIST), html=True), name="spa")
 else:
     @app.get("/", tags=["meta"])
     def root():
