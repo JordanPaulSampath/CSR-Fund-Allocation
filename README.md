@@ -94,7 +94,8 @@ examples): **https://claude.ai/code/artifact/88981d1f-044f-430c-b88e-ed53f3be9ee
 ## Deploying
 
 Frontend → **Vercel**, backend → **Railway**, database → **Supabase** (Postgres).
-Step-by-step in **[DEPLOY.md](DEPLOY.md)**. Config files are already in the repo:
+Plain-language walkthrough: **[DEPLOY.md](DEPLOY.md)** (or the visual version:
+https://claude.ai/code/artifact/0e2d9a2d-7fb5-4f98-9245-317aa267af9d). Config files are already in the repo:
 `frontend/vercel.json`, `backend/railway.json` + `Procfile` + `runtime.txt`, and
 `.env.example` on both sides. The backend auto-switches to Postgres when
 `DATABASE_URL` is set and creates its own tables on first boot.
