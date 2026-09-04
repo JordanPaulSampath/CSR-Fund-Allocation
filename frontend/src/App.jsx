@@ -1,4 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { viewTransition } from './lib/motion'
 import { AuthProvider, useAuth, authHeaders } from './context/AuthContext'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
@@ -153,98 +155,85 @@ function Dashboard() {
               </div>
             )}
 
-            {/* PROPOSALS */}
-            {activeView === 'proposals' && (
-              <div className="space-y-6">
-                {/* Welcome */}
-                <div>
-                  <h1 className="font-serif text-xl" style={{ color: 'var(--ink)' }}>
-                    Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {user?.user || 'CSR Manager'}
-                  </h1>
-                  <p className="text-xs mt-1" style={{ color: 'var(--stone)' }}>
-                    Load NGO proposals and run the optimizer to allocate your CSR budget.
-                  </p>
-                </div>
-
-                <hr className="rule" />
-
-                {/* Actions */}
-                <div className="flex flex-wrap items-center gap-3">
-                  <CSVUpload onUpload={uploadCSV} disabled={loading || allocating} />
-                  <button onClick={loadSampleData} disabled={loading} className="btn-primary">
-                    {loading ? 'Loading…' : 'Load Sample Data'}
-                  </button>
-                  {proposals.length > 0 && <button onClick={resetAll} className="btn-secondary">Clear</button>}
-                </div>
-                <p className="text-[11px] -mt-3" style={{ color: 'var(--stone)' }}>
-                  Uploading a CSV replaces the current set and runs the optimiser automatically.
-                  Columns: <span className="font-mono">ngo_name, title, sector, region, requested_amount, beneficiaries</span>.
-                </p>
-
-                {proposals.length > 0 && <SummaryStats proposals={proposals} budget={budget} />}
-
-                {proposals.length > 0 ? (
-                  <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-6 items-start">
-                    <ProposalList proposals={proposals} loading={loading} onLoadSample={loadSampleData} />
-                    <div className="xl:sticky xl:top-16">
-                      <AllocationPanel budget={budget} constraints={constraints} setConstraints={setConstraints}
-                        onAllocate={runAllocation} onCompare={runCompare} allocating={allocating}
-                        proposalCount={proposals.length} />
-                    </div>
-                  </div>
-                ) : (
-                  <ProposalList proposals={proposals} loading={loading} onLoadSample={loadSampleData} />
-                )}
-              </div>
-            )}
-
-            {/* RESULTS */}
-            {activeView === 'results' && (
-              <div className="space-y-6">
-                <button onClick={() => setActiveView('proposals')} className="text-xs" style={{ color: 'var(--stone)' }}>
-                  ← Back to proposals
-                </button>
-                {allocationResult && (
-                  <>
-                    <ResultsView result={allocationResult} proposals={proposals} budget={budget} />
-                    <BudgetAdvisor trigger={allocationResult} />
-                    <SectorChart result={allocationResult} proposals={proposals} />
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* PARTNER MATCH */}
-            {activeView === 'partners' && <PartnerMatch proposals={proposals} />}
-
-            {/* EQUITY SNAPSHOT */}
-            {activeView === 'equity' && <EquitySnapshot />}
-
-            {/* IMPACT OVERVIEW */}
-            {activeView === 'impact' && <ImpactOverview result={allocationResult} proposals={proposals} />}
-
-            {/* PARTNER DIRECTORY */}
-            {activeView === 'directory' && <PartnersDirectory />}
-
-            {/* AUDIT TRAIL */}
-            {activeView === 'audit' && <AuditTrail />}
-
-            {/* DATASET & SOURCES */}
-            {activeView === 'dataset' && <DatasetSources />}
-
-            {/* COMPLIANCE */}
-            {activeView === 'compliance' && <ComplianceDashboard budget={budget} />}
-
-            {/* PROJECTS */}
-            {activeView === 'projects' && <ProjectTracker />}
-
-            {/* CSR-2 */}
-            {activeView === 'csr2' && <CSR2Form />}
+            <AnimatePresence mode="wait">
+              <motion.div key={activeView}
+                initial={viewTransition.initial} animate={viewTransition.animate} exit={viewTransition.exit}>
+                {renderView()}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </main>
       </div>
     </div>
   )
+
+  function renderView() {
+    if (activeView === 'proposals') return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="font-serif text-xl" style={{ color: 'var(--ink)' }}>
+            Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {user?.user || 'CSR Manager'}
+          </h1>
+          <p className="text-xs mt-1" style={{ color: 'var(--stone)' }}>
+            Load NGO proposals and run the optimizer to allocate your CSR budget.
+          </p>
+        </div>
+
+        <hr className="rule" />
+
+        <div className="flex flex-wrap items-center gap-3">
+          <CSVUpload onUpload={uploadCSV} disabled={loading || allocating} />
+          <button onClick={loadSampleData} disabled={loading} className="btn-primary">
+            {loading ? 'Loading…' : 'Load Sample Data'}
+          </button>
+          {proposals.length > 0 && <button onClick={resetAll} className="btn-secondary">Clear</button>}
+        </div>
+        <p className="text-[11px] -mt-3" style={{ color: 'var(--stone)' }}>
+          Uploading a CSV replaces the current set and runs the optimiser automatically.
+          Columns: <span className="font-mono">ngo_name, title, sector, region, requested_amount, beneficiaries</span>.
+        </p>
+
+        {proposals.length > 0 && <SummaryStats proposals={proposals} budget={budget} />}
+
+        {proposals.length > 0 ? (
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-6 items-start">
+            <ProposalList proposals={proposals} loading={loading} onLoadSample={loadSampleData} />
+            <div className="xl:sticky xl:top-16">
+              <AllocationPanel budget={budget} constraints={constraints} setConstraints={setConstraints}
+                onAllocate={runAllocation} onCompare={runCompare} allocating={allocating}
+                proposalCount={proposals.length} />
+            </div>
+          </div>
+        ) : (
+          <ProposalList proposals={proposals} loading={loading} onLoadSample={loadSampleData} />
+        )}
+      </div>
+    )
+
+    if (activeView === 'results') return (
+      <div className="space-y-6">
+        <button onClick={() => setActiveView('proposals')} className="btn-ghost">← Back to proposals</button>
+        {allocationResult && (
+          <>
+            <ResultsView result={allocationResult} proposals={proposals} budget={budget} />
+            <BudgetAdvisor trigger={allocationResult} />
+            <SectorChart result={allocationResult} proposals={proposals} />
+          </>
+        )}
+      </div>
+    )
+
+    if (activeView === 'partners') return <PartnerMatch proposals={proposals} />
+    if (activeView === 'equity') return <EquitySnapshot />
+    if (activeView === 'impact') return <ImpactOverview result={allocationResult} proposals={proposals} />
+    if (activeView === 'directory') return <PartnersDirectory />
+    if (activeView === 'audit') return <AuditTrail />
+    if (activeView === 'dataset') return <DatasetSources />
+    if (activeView === 'compliance') return <ComplianceDashboard budget={budget} />
+    if (activeView === 'projects') return <ProjectTracker />
+    if (activeView === 'csr2') return <CSR2Form />
+    return null
+  }
 }
 
 export default function App() {

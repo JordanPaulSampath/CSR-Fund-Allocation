@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion'
+import { spring } from '../lib/motion'
 import { useAuth } from '../context/AuthContext'
 
 const I = {
@@ -65,16 +67,25 @@ export default function Sidebar({ activeView, setActiveView, collapsed, setColla
           </div>
 
           {NAV.map((sec, si) => (
-            <div key={sec.section} className="mb-4 animate-slide-in-left" style={{ animationDelay: `${si * 60}ms` }}>
+            <motion.div key={sec.section} className="mb-4"
+              initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
+              transition={{ ...spring.ui, delay: si * 0.05 }}>
               <p className="section-label mb-1.5 px-2">{sec.section}</p>
-              {sec.items.map((item) => (
-                <button key={item.id} onClick={() => setActiveView(item.id)}
-                  className="nav-item" data-active={activeView === item.id}>
-                  <Icon d={item.icon} />
-                  {item.label}
-                </button>
-              ))}
-            </div>
+              {sec.items.map((item) => {
+                const active = activeView === item.id
+                return (
+                  <button key={item.id} onClick={() => setActiveView(item.id)}
+                    className="nav-item" data-active={active}>
+                    {active && (
+                      <motion.span layoutId="nav-pill" className="nav-pill"
+                        transition={spring.ui} />
+                    )}
+                    <Icon d={item.icon} />
+                    {item.label}
+                  </button>
+                )
+              })}
+            </motion.div>
           ))}
         </div>
       </aside>

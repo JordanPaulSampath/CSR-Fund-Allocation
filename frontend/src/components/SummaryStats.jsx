@@ -1,4 +1,7 @@
 import { useMemo } from 'react'
+import { motion } from 'framer-motion'
+import { spring, staggerParent, fadeUp } from '../lib/motion'
+import SpringNumber from './SpringNumber'
 
 function money(n) {
   if (!n) return '₹0'
@@ -26,23 +29,27 @@ export default function SummaryStats({ proposals = [], budget = 0 }) {
   const coverage = s.requested > 0 ? Math.min((budget / s.requested) * 100, 100) : 0
 
   const cells = [
-    { label: 'Proposals', value: s.total, sub: s.funded ? `${s.funded} funded` : `${s.sectors} sectors` },
-    { label: 'Requested', value: money(s.requested), sub: `budget covers ${coverage.toFixed(0)}%` },
-    { label: 'Beneficiaries', value: s.beneficiaries.toLocaleString('en-IN'), sub: 'across all proposals' },
-    { label: 'Regions', value: s.regions, sub: `${s.sectors} sectors` },
-    { label: 'Avg score', value: s.avgScore.toFixed(1), sub: 'out of 10' },
+    { label: 'Proposals', num: s.total, fmt: (n) => Math.round(n).toString(), sub: s.funded ? `${s.funded} funded` : `${s.sectors} sectors` },
+    { label: 'Requested', num: s.requested, fmt: money, sub: `budget covers ${coverage.toFixed(0)}%` },
+    { label: 'Beneficiaries', num: s.beneficiaries, fmt: (n) => Math.round(n).toLocaleString('en-IN'), sub: 'across all proposals' },
+    { label: 'Regions', num: s.regions, fmt: (n) => Math.round(n).toString(), sub: `${s.sectors} sectors` },
+    { label: 'Avg score', num: s.avgScore, fmt: (n) => n.toFixed(1), sub: 'out of 10' },
   ]
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-px animate-fade-in"
-      style={{ background: 'var(--rule)', border: '1px solid var(--rule)' }}>
+    <motion.div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"
+      variants={staggerParent(0.05)} initial="hidden" animate="show">
       {cells.map((c) => (
-        <div key={c.label} className="p-3.5" style={{ background: 'var(--paper)' }}>
+        <motion.div key={c.label} variants={fadeUp}
+          whileHover={{ y: -3, transition: spring.micro }}
+          className="card card-hover p-3.5">
           <p className="stat-label">{c.label}</p>
-          <p className="stat-value mt-1" style={{ fontSize: '1.25rem' }}>{c.value}</p>
+          <p className="stat-value mt-1" style={{ fontSize: '1.25rem' }}>
+            <SpringNumber value={c.num} format={c.fmt} level="story" />
+          </p>
           <p className="text-[10px] mt-0.5" style={{ color: 'var(--stone)' }}>{c.sub}</p>
-        </div>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   )
 }

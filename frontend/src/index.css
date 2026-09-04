@@ -24,6 +24,10 @@
     --teal:      #0D9488;   /* positive / funded         */
     --serif: 'Space Grotesk', 'Inter', system-ui, sans-serif;   /* display + numbers */
     --grotesk: 'Inter', system-ui, -apple-system, sans-serif;   /* body */
+    /* spring-ish easings — L1 micro, L2 transition, L3 storytelling */
+    --spring-1: linear(0,.2 3.6%,.63 8.5%,.9 13%,1.03 16.4%,1.09 19.8%,1.1 23.5%,1.06 30%,1 42%,.99 55%,1);
+    --spring-2: cubic-bezier(.22,1.2,.36,1);
+    --ease-story: cubic-bezier(.16,1,.3,1);
     font-family: var(--grotesk);
     color-scheme: light;
   }
@@ -49,6 +53,12 @@
     border: 1px solid var(--rule);
     border-radius: 12px;
     box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.03);
+    transition: transform 0.18s var(--spring-2), box-shadow 0.18s var(--spring-2), border-color 0.18s ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(16, 24, 40, 0.08), 0 2px 6px rgba(16, 24, 40, 0.05);
+    border-color: color-mix(in srgb, var(--petrol) 30%, var(--rule));
   }
 
   /* ── Register (list) ── */
@@ -59,9 +69,9 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    transition: background 0.15s ease;
+    transition: background 0.16s ease, padding-left 0.18s var(--spring-2);
   }
-  .register-row:hover { background: var(--petrol-soft); }
+  .register-row:hover { background: var(--petrol-soft); padding-left: 1.35rem; }
 
   /* ── Seal ── */
   .seal {
@@ -83,21 +93,23 @@
     padding: 0.55rem 1.1rem; border-radius: 8px;
     font-size: 0.8125rem; font-weight: 600;
     border: none; cursor: pointer;
-    transition: filter 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+    transition: filter 0.16s ease, transform 0.22s var(--spring-1), box-shadow 0.16s ease;
     box-shadow: 0 1px 2px rgba(79, 70, 229, 0.25);
   }
-  .btn-primary:hover { filter: brightness(1.08); box-shadow: 0 2px 8px rgba(79, 70, 229, 0.28); }
-  .btn-primary:active { transform: translateY(1px); }
-  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; filter: none; box-shadow: none; }
+  .btn-primary:hover { filter: brightness(1.08); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3); }
+  .btn-primary:active { transform: translateY(0) scale(0.97); }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; filter: none; box-shadow: none; transform: none; }
 
   .btn-secondary {
     background: var(--paper); color: var(--ink);
     padding: 0.55rem 1.1rem; border-radius: 8px;
     font-size: 0.8125rem; font-weight: 500;
     border: 1px solid var(--rule); cursor: pointer;
-    transition: all 0.15s ease;
+    transition: border-color 0.16s ease, color 0.16s ease, background 0.16s ease, transform 0.22s var(--spring-1);
   }
-  .btn-secondary:hover { border-color: var(--petrol); color: var(--petrol); background: var(--petrol-soft); }
+  .btn-secondary:hover { border-color: var(--petrol); color: var(--petrol); background: var(--petrol-soft); transform: translateY(-2px); }
+  .btn-secondary:active { transform: translateY(0) scale(0.97); }
+  .btn-secondary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
   .btn-ghost {
     background: transparent; color: var(--stone);
@@ -150,15 +162,22 @@
 
   /* ── Sidebar nav ── */
   .nav-item {
+    position: relative;
     width: 100%; display: flex; align-items: center; gap: 0.6rem;
     padding: 0.5rem 0.65rem; border-radius: 8px;
     font-size: 0.8125rem; color: var(--ink);
-    transition: background 0.15s ease, color 0.15s ease;
+    transition: color 0.16s ease, transform 0.2s var(--spring-2);
     text-align: left;
   }
-  .nav-item:hover { background: var(--petrol-soft); }
-  .nav-item[data-active="true"] { background: var(--petrol-soft); color: var(--petrol); font-weight: 600; }
-  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.8; }
+  .nav-item:hover { transform: translateX(3px); }
+  .nav-item[data-active="true"] { color: var(--petrol); font-weight: 600; }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.7; transition: opacity 0.16s; }
+  .nav-item[data-active="true"] svg, .nav-item:hover svg { opacity: 1; }
+  .nav-item > svg, .nav-item { position: relative; z-index: 1; }
+  .nav-pill {
+    position: absolute; inset: 0; border-radius: 8px;
+    background: var(--petrol-soft); z-index: 0;
+  }
 }
 
 @layer utilities {
@@ -208,6 +227,23 @@
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 .shimmer { background: linear-gradient(90deg, var(--rule) 25%, var(--parchment) 50%, var(--rule) 75%); background-size: 200% 100%; animation: shimmer 1.5s ease-in-out infinite; border-radius: 4px; }
 
+/* L3 — the optimiser scanning its options */
+@keyframes scan {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+.scanner { position: relative; overflow: hidden; }
+.scanner::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--petrol) 22%, transparent), transparent);
+  animation: scan 1.15s var(--ease-story) infinite;
+}
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--petrol) 32%, transparent); }
+  50%      { box-shadow: 0 0 0 8px color-mix(in srgb, var(--petrol) 0%, transparent); }
+}
+.glow-pulse { animation: glowPulse 1.6s ease-out infinite; }
+
 .hover-underline { position: relative; }
 .hover-underline::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 0; height: 1px; background: var(--petrol); transition: width 0.2s ease; }
 .hover-underline:hover::after { width: 100%; }
@@ -216,10 +252,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .animate-stamp, .animate-fade-in, .animate-slide-in-left, .animate-slide-in-right,
-  .animate-scale-in, .animate-tick, .animate-fill-bar, .animate-pulse-dot, .shimmer {
+  .animate-scale-in, .animate-tick, .animate-fill-bar, .animate-pulse-dot, .shimmer,
+  .scanner::after, .glow-pulse {
     animation: none !important; opacity: 1 !important; transform: none !important;
   }
-  .register-row, .input, .btn-primary, .btn-secondary { transition: none !important; }
+  .register-row, .input, .btn-primary, .btn-secondary, .card, .nav-item { transition: none !important; }
+  .register-row:hover, .nav-item:hover, .btn-primary:hover, .btn-secondary:hover { transform: none !important; }
 }
 
 ::selection { background: var(--petrol-soft); color: var(--petrol); }

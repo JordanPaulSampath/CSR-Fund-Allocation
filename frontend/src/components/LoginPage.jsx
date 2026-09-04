@@ -28,12 +28,12 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Cover page header */}
         <div className="mb-10 text-center animate-fade-in">
-          <h1 className="font-serif text-3xl sm:text-4xl" style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}>
-            CSR Helper
+          <h1 className="font-serif text-3xl sm:text-4xl font-bold" style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+            Saarthi
           </h1>
-          <hr className="mt-4 mx-auto" style={{ width: '60px', borderColor: 'var(--brass)', borderWidth: '1px' }} />
+          <hr className="mt-4 mx-auto" style={{ width: '60px', borderColor: 'var(--petrol)', borderWidth: '1.5px' }} />
           <p className="mt-3 text-xs" style={{ color: 'var(--stone)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-            Intelligent Fund Allocation
+            CSR Fund Allocation &amp; Prioritisation
           </p>
         </div>
 

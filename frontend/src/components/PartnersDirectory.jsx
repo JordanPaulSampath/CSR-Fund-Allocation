@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
+import { staggerParent, fadeUp } from '../lib/motion'
 import { listPartners } from '../services/api'
 
 export default function PartnersDirectory() {
@@ -35,9 +37,10 @@ export default function PartnersDirectory() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3"
+        variants={staggerParent(0.04)} initial="hidden" animate="show" key={sector}>
         {shown.map((p) => (
-          <div key={p.id} className="card p-4">
+          <motion.div key={p.id} variants={fadeUp} whileHover={{ y: -3 }} className="card card-hover p-4">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>{p.name}</p>
@@ -55,9 +58,9 @@ export default function PartnersDirectory() {
             </div>
             <p className="text-[10px] mt-2" style={{ color: 'var(--stone)' }}>{p.regions.join(' · ')}</p>
             {p.contact && <p className="text-[10px] mt-1 font-mono" style={{ color: 'var(--petrol)' }}>{p.contact}</p>}
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   )
 }
